@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Script to create the run_config.yaml
+"""
+
+# authorship
+__author__ = "Mariano Olivera Fedi"
+__maintainer__ = "Mariano Olivera Fedi"
+__email__ = "mariano.olivera.fedi@hotmail.com"
+
+# import libraries
+import argparse
+from pathlib import Path
+import sys
+import os
+import yaml
+import csv
+
+# import pandas as pd
+from eihic import (
+    DEFAULT_CONFIG_FILE,
+    DEFAULT_HPC_CONFIG_FILE,
+    DEFAULT_SAMPLE_CSV_FILE,
+)
+
+# get script name
+script = Path(sys.argv[0]).name
+
+cwd = os.getcwd()
+
+
+class HI_CCONFIGURE:
+    @staticmethod
+    def check_exits(file_path):
+        if not Path(file_path).exists():
+            raise FileNotFoundError(f"File not found: '{file_path}'")
+        return str(Path(file_path).resolve())
+
+    def __init__(self, args):
+        self.args = args
+        self.args.samples_csv = HI_CCONFIGURE.check_exits(self.args.samples_csv)
+        self.run_config = dict()
+        self.run_config_file = str()
+
+    def process_run_config(self):
+        with open(DEFAULT_CONFIG_FILE, "r") as fh:
+            try:
+                self.run_config = yaml.safe_load(fh)
+            except yaml.YAMLError as err:
+                print(err)
+        if not self.run_config:
+            raise ValueError(
+                f"No information processed from run_config file - '{self.args.run_config}'"
+            )
+
+    def process_samples_csv(self):
+        data = {}
+        with open(self.args.samples_csv, newline='') as f:
+            reader = csv.reader(f)
+            data = list(reader)
+
+# Save the data to a list: R1 forward reads, R2 reverse reads, and sample name/ organism name
+        R1 = data[0]
+        R2 = data[1]
+        reference = data[2][0]
+        organism = data[3][0]
+
+# Forward reads and sample reads should be =
+        if len(data[0]) != len(data[1]):
+            print("Error: the number pair-end samples are not the same for R1 and R2")
+            exit()    
+           
+        # print(R1,R2,organism,reference)
+        # add details
+        for sample in R1:
+
+            if not Path(R1).is_file():
+                raise ValueError(
+                    f"Sample '{R1[sample]}' R1 path does not exist {R1[sample]} ."
+            )
+        for sample in R2:
+
+            if not Path(R2[sample]).is_file():
+                raise ValueError(
+                    f"Sample '{R2[sample]}' R1 path does not exist {R2[sample]} ."
+            )
+
+        # link the reads
+        read_dir = Path(self.args.output).joinpath("reference/reads")
+        Path(read_dir).mkdir(parents=True, exist_ok=True)
+
+        # r1_cmd = f"cd {read_dir} && ln -s {R1[sample]} x[SID].R1.{ext}"
+        for sample in range(len(R1)):
+            r1_name = R1[sample]
+            r2_name = R2[sample]
+            r1_path = Path(read_dir).joinpath(r1_name)
+            r2_path = Path(read_dir).joinpath(r2_name)
+
+            if self.args.force_reconfiguration:
+                if Path(r1_path).is_symlink():
+                    print(f"Unlinking '{r1_path}' with --force")
+                    r1_path.unlink()
+                if Path(r2_path).is_symlink():
+                    print(f"Unlinking '{r2_path}' with --force")
+                    r2_path.unlink()
+
+            Path(r1_path).symlink_to(R1[sample])
+            Path(r2_path).symlink_to(R2[sample])
+
+
+    def write_run_config(self):
+        # output directory
+        self.run_config["reference"] = self.args.reference
+        self.run_config["organism"] = self.args.organism
+        self.run_config["R1"] = self.args.R1
+        self.run_config["R2"] = self.args.R2
+        # process samples tsv to yaml
+        self.process_samples_csv()
+
+        # modify any additional defaults
+        self.run_config["hpc_config"] = DEFAULT_HPC_CONFIG_FILE
+        self.run_config["jira"]["jira_id"] = self.args.jira
+        # write the new run config file
+        with open(self.run_config_file, "w") as fh:
+            yaml.dump(self.run_config, fh, sort_keys=False)
+
+    def run(self):
+        self.process_run_config()
+        self.run_config_file = os.path.join(self.args.output, "run_config.yaml")
+        self.write_run_config()
+        print(f"\nGreat! Created run_config file: '{self.run_config_file}'\n")
+
+
+def main():
+
+    parser = argparse.ArgumentParser(description="Script to create the run_config.yaml")
+    parser.add_argument(
+        "samples_csv",
+        help=f"Provide sample information in csv format. Please refer to the sample file is here: {DEFAULT_CONFIG_FILE} for more information above the tsv format. A template is provided here {DEFAULT_SAMPLE_CSV_FILE}.  (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--jira",
+        help="Provide JIRA id for posting job summary. E.g., PPBFX-611 (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        default=os.path.join(cwd, "output"),
+        help="Provide output directory (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-f",
+        "--force-reconfiguration",
+        action="store_true",
+        help="Force reconfiguration (default: %(default)s)",
+    )
+    args = parser.parse_args()
+    HI_CCONFIGURE(args).run()
+
+
+if __name__ == "__main__":
+    main()
