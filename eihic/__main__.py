@@ -82,6 +82,7 @@ class HI_C:
         self.no_posting = args.no_posting
         self.verbose = args.verbose
         self.dry_run = args.dry_run
+        self.library = args.library
         self.loaded_run_config = yaml.load(
             open(self.run_config), Loader=yaml.SafeLoader
         )
@@ -109,7 +110,7 @@ class HI_C:
         if self.dry_run:
             print("Enabling dry run..")
             cmd = (
-                f"snakemake --snakefile {script_dir}/{self.args.library}.smk"
+                f"snakemake --snakefile {script_dir}/{self.library}.smk"
                 f" --configfile {self.run_config} --latency-wait {self.latency_wait} --jobs {self.jobs} --cluster-config {self.hpc_config}"
                 f" --config notify={self.no_posting} verbose={self.verbose}"
                 f" --drmaa ' -p {{cluster.partition}} -c {{cluster.cores}} --mem={{cluster.memory}} -J {{cluster.J}}' -np --reason "
@@ -157,12 +158,8 @@ def main():
     # configure
     parser_configure = subparsers.add_parser("configure", help="see `configure -h`")
     parser_configure.add_argument(
-        "samples_csv",
+        "--samples_csv",
         help=f"Provide sample information in tab-separated format. Please refer to the sample file is here: {DEFAULT_CONFIG_FILE} for more information above the csv format. A template is provided here {DEFAULT_SAMPLE_CSV_FILE}.  (default: %(default)s)",
-    )
-    parser_configure.add_argument(
-        "library",
-        help=f"This pipeline supports the following library protocols for hi-c data: arima (2 enzymes protocol), and  omni-c. Provide the name (arima or omni-c) as the second positional argument after the sample file",
     )
     parser_configure.add_argument(
         "--jira",
@@ -187,6 +184,10 @@ def main():
     parser_run.add_argument(
         "run_config",
         help=f"Provide run configuration YAML. Run 'eigatk configure -h' to generate the run configuration YAML file. (Description template file is here: {DEFAULT_CONFIG_FILE})",
+    )
+    parser_configure.add_argument(
+        "--library",
+        help=f"This pipeline supports the following library protocols for hi-c data: arima (2 enzymes protocol), and  omni-c. Provide the name (arima or omni-c) as the second positional argument after the sample file",
     )
     parser_run.add_argument(
         "--hpc_config",
