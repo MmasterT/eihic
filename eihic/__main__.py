@@ -157,7 +157,7 @@ def main():
     # configure
     parser_configure = subparsers.add_parser("configure", help="see `configure -h`")
     parser_configure.add_argument(
-        "sample.csv",
+        "samples_csv",
         help=f"Provide sample information in tab-separated format. Please refer to the sample file is here: {DEFAULT_CONFIG_FILE} for more information above the csv format. A template is provided here {DEFAULT_SAMPLE_CSV_FILE}.  (default: %(default)s)",
     )
     parser_configure.add_argument(
