@@ -1,0 +1,4 @@
+sample_1_R1.fastq,sample_2_R1.fastq #reads forward
+sample_1_R1.fastq,sample_2_R1.fastq #reverse reads
+reference/genome/you_reference_genome.fasta #path to reference
+cute_monkey #name of organism (will be used for naming only)
