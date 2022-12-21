@@ -1,0 +1,53 @@
+{
+    "__default__" :
+    {
+        "cores"     : 8,
+        "memory"    : 5000,
+        "resources" : "\"select[mem>25000] rusage[mem=25000] span[hosts=1]\"",
+        "name"      : "smk.{rule}",
+        "output"    : "logs/{rule}/smk_%j_%N.out",
+        "error"     : "logs/{rule}/smk_%j_%N.err",
+        "partition" : "ei-long,ei-cb,ei-medium",
+        "account"   : "olivera@nbi.ac.uk",
+        "time"      : "2-12:00:00"
+    },
+    "hicup_run": {
+        "cores": 16,
+        "memory": 30000
+    },
+    "bwt_2_index": {
+        "memory": 9000
+    }, 
+    "def": {
+        "cores": 10
+    },
+    "mapping_to_reference": {
+        "cores": 12,
+        "memory": 22000,
+        "partition": "ei-long,ei-cb"
+    },
+    "unique_unique": {
+        "cores": 12,
+        "memory": 22000,
+        "partition": "ei-long,ei-cb"
+    },
+    "pairtools_sort": {
+        "memory": 22000,
+        "cores": 12,
+        "partition": "ei-long"
+    },
+    "pairtools_dedup": {
+        "memory": 22000,
+        "cores": 12
+    },
+    "unsorted_bam": {
+        "memory": 22000,
+        "cores": 12,
+        "partition": "ei-long,ei-cb"
+    },
+    "sort_bam": {
+        "memory": 22000,
+        "partition": "ei-long,ei-cb",
+        "cores": 12
+    }
+}
