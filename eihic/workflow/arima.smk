@@ -22,10 +22,10 @@ output = os.path.abspath(config["output"])
 logs_dir = os.path.abspath(config["logs"])
 
 #save the data to a list: R1 forward reads, R2 reverse reads, and sample name/ organism name
-R1= config["R1"]
-R2= config["R2"]
-REFERENCE= config["reference"]
-ORGANISM= config["organism"]
+R1 = config["input_samples"]["R1"]
+R2 = config["input_samples"]["R2"]
+REFERENCE = config["reference"]
+ORGANISM = config["organism"]
 
 
 def get_read_list(data):
