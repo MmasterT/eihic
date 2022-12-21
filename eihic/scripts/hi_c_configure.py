@@ -74,11 +74,6 @@ class HI_CCONFIGURE:
         data["R2"] = file[1]
         data["reference"] = file[2][0]
         data["organism"] = file[3][0]
-           
-        if len(file[0]) == 1:
-
-            data["R1"] = file[0][0]
-            data["R2"] = file[1][0]
         
         # add details
         for sample in data["R1"]:
