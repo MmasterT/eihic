@@ -167,7 +167,7 @@ rule pairtools_sort:
 
 rule unique_unique:
     input: 
-        align = f"{output}/workflow/bwa/{ORGANISM}_mapped_reads.bam",
+        align = f"{output}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
         reference = f"{REFERENCE}"
     output: 
         unique = f"{output}/workflow/pairtools/parsed_pairbam.gz",
