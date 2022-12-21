@@ -74,7 +74,7 @@ class HI_CCONFIGURE:
         data["R2"] = file[1]
         data["reference"] = file[2][0]
         data["organism"] = file[3][0]
-        
+
         # add details
         for sample in data["R1"]:
 
@@ -108,8 +108,8 @@ class HI_CCONFIGURE:
                     print(f"Unlinking '{r2_path}' with --force")
                     r2_path.unlink()
 
-            Path(r1_path).symlink_to(sample)
-            Path(r2_path).symlink_to(sample)
+            Path(r1_path).symlink_to(data["R1"][sample])
+            Path(r2_path).symlink_to(data["R2"][sample])
         
         self.run_config["input_samples"] = data
 
