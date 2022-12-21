@@ -1,9 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+Snakemake for arima Hi-C libraries QC
+"""
+
 import os
 import sys
 import json
 import csv
-from snakemake.utils import min_version
-min_version("7.10")
 
 from eihic.scripts.hpc_config import HpcConfig
 HPC_CONFIG = HpcConfig(config["hpc_config"])
@@ -15,7 +20,7 @@ if not Path(config["jira"]["password_file"]).is_file() or not jira_id:
     NOTIFY = False
 output = os.path.abspath(config["output"])
 logs_dir = os.path.abspath(config["logs"])
-output = os.path.abspath(config["output"]
+
 #save the data to a list: R1 forward reads, R2 reverse reads, and sample name/ organism name
 R1= config["R1"]
 R2= config["R2"]
