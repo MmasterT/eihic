@@ -32,6 +32,7 @@ logs: ./output/logs
 source:
   omni-c: " omni-c-20210720_a30d45f_CBG"
   arima: " chic-1.4_CBG"
+  snakemake: " snakamake-7.12.1_CBG "
 
 # 1 means true for the parameter and 0 means false. 
 #For formatting options refer to the HiCUP documention

@@ -140,7 +140,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="Script to create the run_config.yaml")
     parser.add_argument(
-        "samples_csv",
+        "--samples_csv",
         help=f"Provide sample information in csv format. Please refer to the sample file is here: {DEFAULT_CONFIG_FILE} for more information above the tsv format. A template is provided here {DEFAULT_SAMPLE_CSV_FILE}.  (default: %(default)s)",
     )
     parser.add_argument(

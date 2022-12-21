@@ -97,6 +97,7 @@ class HI_C:
         self.jira_id = self.loaded_run_config["jira"]["jira_id"]
         self.output = self.loaded_run_config["output"]
         self.samples_csv = self.loaded_run_config["samples_csv"]
+        self.logs = self.loaded_run_config["logs"]
         # Load the config file
         self.config = yaml.load(open(DEFAULT_CONFIG_FILE), Loader=yaml.SafeLoader)
 

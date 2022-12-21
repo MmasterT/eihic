@@ -13,41 +13,36 @@
     },
     "hicup_run": {
         "cores": 16,
-        "memory": 30000
+        "memory": 50000
     },
     "bwt_2_index": {
-        "memory": 9000
+        "memory": 20000
     }, 
     "def": {
         "cores": 10
     },
     "mapping_to_reference": {
-        "cores": 12,
-        "memory": 22000,
-        "partition": "ei-long,ei-cb"
+        "cores": 16,
+        "memory": 120000
     },
     "unique_unique": {
-        "cores": 12,
-        "memory": 22000,
-        "partition": "ei-long,ei-cb"
+        "cores": 32,
+        "memory": 120000
     },
     "pairtools_sort": {
-        "memory": 22000,
-        "cores": 12,
-        "partition": "ei-long"
+        "memory": 120000,
+        "cores": 32
     },
     "pairtools_dedup": {
-        "memory": 22000,
-        "cores": 12
+        "memory": 120000,
+        "cores": 24
     },
     "unsorted_bam": {
-        "memory": 22000,
-        "cores": 12,
-        "partition": "ei-long,ei-cb"
+        "memory": 120000,
+        "cores": 24
     },
     "sort_bam": {
-        "memory": 22000,
-        "partition": "ei-long,ei-cb",
+        "memory": 60000,
         "cores": 12
     }
 }
