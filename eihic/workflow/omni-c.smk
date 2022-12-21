@@ -33,6 +33,7 @@ R1 = config["input_samples"]["R1"]
 R2 = config["input_samples"]["R2"]
 REFERENCE = config["input_samples"]["reference"]
 ORGANISM = config["input_samples"]["organism"]
+cwd = os.getcwd()
 
 # If one sample use string if more than one sample join the list.
 # This is needed for one of the rules.

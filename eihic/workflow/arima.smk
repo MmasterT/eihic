@@ -26,7 +26,7 @@ R1 = config["input_samples"]["R1"]
 R2 = config["input_samples"]["R2"]
 REFERENCE = config["input_samples"]["reference"]
 ORGANISM = config["input_samples"]["organism"]
-
+cwd = os.getcwd()
 
 def get_read_list(data):
 #create a list of reads for the config file of HiCUP
