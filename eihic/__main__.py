@@ -186,7 +186,7 @@ def main():
         "run_config",
         help=f"Provide run configuration YAML. Run 'eigatk configure -h' to generate the run configuration YAML file. (Description template file is here: {DEFAULT_CONFIG_FILE})",
     )
-    parser_configure.add_argument(
+    parser_run.add_argument(
         "--library",
         help=f"This pipeline supports the following library protocols for hi-c data: arima (2 enzymes protocol), and  omni-c. Provide the name (arima or omni-c) as the second positional argument after the sample file",
     )
