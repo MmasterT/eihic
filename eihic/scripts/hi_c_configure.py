@@ -41,6 +41,7 @@ class HI_CCONFIGURE:
         self.args = args
         self.args.samples_csv = HI_CCONFIGURE.check_exits(self.args.samples_csv)
         self.run_config = dict()
+        self.args.logs = str(Path(self.args.output).resolve() / "logs")
         self.run_config_file = str()
 
     def process_run_config(self):
