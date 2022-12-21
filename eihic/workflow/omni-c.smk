@@ -31,8 +31,8 @@ if not Path(config["jira"]["password_file"]).is_file() or not jira_id:
 # Save the data to a list: R1 forward reads, R2 reverse reads, and sample name/ organism name
 R1 = config["input_samples"]["R1"]
 R2 = config["input_samples"]["R2"]
-REFERENCE = config["reference"]
-ORGANISM = config["organism"]
+REFERENCE = config["input_samples"]["reference"]
+ORGANISM = config["input_samples"]["organism"]
 
 # If one sample use string if more than one sample join the list.
 # This is needed for one of the rules.
