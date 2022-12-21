@@ -113,8 +113,8 @@ class HI_CCONFIGURE:
                     print(f"Unlinking '{r2_path}' with --force")
                     r2_path.unlink()
 
-            Path(r1_path).symlink_to(data["R1"][sample])
-            Path(r2_path).symlink_to(data["R2"][sample])
+            Path(r1_path).symlink_to(sample)
+            Path(r2_path).symlink_to(sample)
         
         self.run_config["input_samples"] = data
 
