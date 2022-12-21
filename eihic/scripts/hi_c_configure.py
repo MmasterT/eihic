@@ -61,18 +61,20 @@ class HI_CCONFIGURE:
             reader = csv.reader(f)
             file = list(reader)
 
-# Save the data to a list: R1 forward reads, R2 reverse reads, and sample name/ organism name
+
+        #  Forward reads and sample reads should be =
+        if len(file[0]) != len(file[1]):
+            print("Error: the number pair-end samples are not the same for R1 and R2")
+            print(data)
+            exit() 
+
+        # Save the data to a list: R1 forward reads, R2 reverse reads, and sample name/ organism name
+        
         data["R1"] = file[0]
         data["R2"] = file[1]
         data["reference"] = file[2][0]
         data["organism"] = file[3][0]
-
-# Forward reads and sample reads should be =
-        if len(data[0]) != len(data[1]):
-            print("Error: the number pair-end samples are not the same for R1 and R2")
-            exit()    
            
-        # print(R1,R2,organism,reference)
         # add details
         for sample in data["R1"]:
 
