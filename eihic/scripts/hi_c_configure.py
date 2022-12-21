@@ -69,16 +69,17 @@ class HI_CCONFIGURE:
             exit() 
 
         # Save the data to a list: R1 forward reads, R2 reverse reads, and sample name/ organism name
-        
-        if len(file[0]) == 1:
-            file[0] = file[0][0]
-            file[1] = file[1][0]
-        
+       
         data["R1"] = file[0]
         data["R2"] = file[1]
         data["reference"] = file[2][0]
         data["organism"] = file[3][0]
            
+        if len(file[0]) == 1:
+
+            data["R1"] = file[0][0]
+            data["R2"] = file[1][0]
+        
         # add details
         for sample in data["R1"]:
 
