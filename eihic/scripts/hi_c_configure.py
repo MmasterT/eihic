@@ -58,13 +58,13 @@ class HI_CCONFIGURE:
         data = {}
         with open(self.args.samples_csv, newline='') as f:
             reader = csv.reader(f)
-            data = list(reader)
+            file = list(reader)
 
 # Save the data to a list: R1 forward reads, R2 reverse reads, and sample name/ organism name
-        R1 = data[0]
-        R2 = data[1]
-        reference = data[2][0]
-        organism = data[3][0]
+        data["R1"] = file[0]
+        data["R2"] = file[1]
+        data["reference"] = file[2][0]
+        data["organism"] = file[3][0]
 
 # Forward reads and sample reads should be =
         if len(data[0]) != len(data[1]):
@@ -73,27 +73,27 @@ class HI_CCONFIGURE:
            
         # print(R1,R2,organism,reference)
         # add details
-        for sample in R1:
+        for sample in data["R1"]:
 
-            if not Path(R1).is_file():
+            if not Path(sample).is_file():
                 raise ValueError(
-                    f"Sample '{R1[sample]}' R1 path does not exist {R1[sample]} ."
+                    f"Sample '{sample}' R1 path does not exist {sample} ."
             )
-        for sample in R2:
+        for sample in data["R2"]:
 
-            if not Path(R2[sample]).is_file():
+            if not Path(sample).is_file():
                 raise ValueError(
-                    f"Sample '{R2[sample]}' R1 path does not exist {R2[sample]} ."
+                    f"Sample '{sample}' R1 path does not exist {sample} ."
             )
 
         # link the reads
-        read_dir = Path(self.args.output).joinpath("reference/reads")
+        read_dir = Path(self.args.output).joinpath("reads")
         Path(read_dir).mkdir(parents=True, exist_ok=True)
 
         # r1_cmd = f"cd {read_dir} && ln -s {R1[sample]} x[SID].R1.{ext}"
-        for sample in range(len(R1)):
-            r1_name = R1[sample]
-            r2_name = R2[sample]
+        for sample in range(len(data["R1"])):
+            r1_name = data["R1"][sample]
+            r2_name = data["R2"][sample]
             r1_path = Path(read_dir).joinpath(r1_name)
             r2_path = Path(read_dir).joinpath(r2_name)
 
@@ -105,22 +105,26 @@ class HI_CCONFIGURE:
                     print(f"Unlinking '{r2_path}' with --force")
                     r2_path.unlink()
 
-            Path(r1_path).symlink_to(R1[sample])
-            Path(r2_path).symlink_to(R2[sample])
-
+            Path(r1_path).symlink_to(sample)
+            Path(r2_path).symlink_to(sample)
+        
+        self.run_config["input_samples"] = data
 
     def write_run_config(self):
         # output directory
-        self.run_config["reference"] = self.args.reference
-        self.run_config["organism"] = self.args.organism
-        self.run_config["R1"] = self.args.R1
-        self.run_config["R2"] = self.args.R2
-        # process samples tsv to yaml
+        self.run_config["samples_csv"] = self.args.samples_csv
+        self.run_config["output"] = self.args.output
+        self.run_config["logs"] = self.args.logs
+
+        Path(self.args.logs).mkdir(parents=True, exist_ok=True)
+
+        # process samples csv to yaml
         self.process_samples_csv()
 
         # modify any additional defaults
         self.run_config["hpc_config"] = DEFAULT_HPC_CONFIG_FILE
         self.run_config["jira"]["jira_id"] = self.args.jira
+        
         # write the new run config file
         with open(self.run_config_file, "w") as fh:
             yaml.dump(self.run_config, fh, sort_keys=False)
