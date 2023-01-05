@@ -43,6 +43,7 @@ class HI_CCONFIGURE:
         self.run_config = dict()
         self.args.logs = str(Path(self.args.output).resolve() / "logs")
         self.run_config_file = str()
+        self.bm2 = bool()
 
     def process_run_config(self):
         with open(DEFAULT_CONFIG_FILE, "r") as fh:
@@ -129,7 +130,7 @@ class HI_CCONFIGURE:
         self.run_config["jira"]["jira_id"] = self.args.jira
         
         # write bwa-mem2 option
-        if self.args.bm2:
+        if self.bm2:
             self.run_config["bwa-mem2"] = 'True'
         else:
             self.run_config["bwa-mem2"] = 'False'
@@ -171,7 +172,7 @@ def main():
     parser.add_argument(
         "-bm2",
         "--bwa_mem2",
-        default='False',
+        action="store_true",
         help="Use bwa-mem2 insted of bwa mem. This option use a lot more RAM, use with precaution. (default: %(default)s)",
     )
     args = parser.parse_args()
