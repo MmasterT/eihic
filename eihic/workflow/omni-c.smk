@@ -35,6 +35,16 @@ REFERENCE = config["input_samples"]["reference"]
 ORGANISM = config["input_samples"]["organism"]
 cwd = os.getcwd()
 
+if config['bwa-mem2'] == 'True':
+    bwa = 'bwa-mem2'
+elif config['bwa-mem2'] == 'False':
+    bwa = 'bwa'
+else:
+    sys.exit("There is an error related to the config file.\n"
+        + "Check your configuration file is not corrupted.\n"
+        + "If you are not using eihic configure you should."
+    )
+
 # If one sample use string if more than one sample join the list.
 # This is needed for one of the rules.
 if len(R1) == 1 or len(R2) == 1:
@@ -200,6 +210,7 @@ rule mapping_to_reference:
         f"{output}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam"
     params: 
         source = config["source"]["omni-c"],
+        bwa = bwa,
     threads:
         int(HPC_CONFIG.get_cores("mapping_to_reference"))
     log:
@@ -209,8 +220,8 @@ rule mapping_to_reference:
     shell:
         "(set +u" 
         + " && source {params.source}" 
-        + " && bwa mem -5SP -T0 -t {threads} {input.reference} <(zcat {input.R1})"
-        + " <(zcat {input.R2})  |"
+        + " && {params.bwa} mem -5SP -T0 -t {threads} {input.reference}" 
+        + " <(zcat {input.R1}) <(zcat {input.R2})  |"
         + " samtools -@ {threads} -bS |"
         + " samtools sort -@ {threads} > {output}"
         + " ) > {log} 2>&1"
@@ -218,12 +229,13 @@ rule mapping_to_reference:
 rule build_index:
     input: 
         reference = f"{cwd}/{REFERENCE}", 
-        index = f"reference/genome/{ORGANISM}.fasta.fai", 
-        genome = f"reference/genome/{ORGANISM}.genome"
+        index = f"{cwd}/reference/genome/{ORGANISM}.fasta.fai", 
+        genome = f"{cwd}/reference/genome/{ORGANISM}.genome"
     output: 
         f"{cwd}/reference/genome/{ORGANISM}.fasta.amb"
     params:
         source = config["source"]["omni-c"]
+        bwa = bwa,
     resources:
         mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
     log:
@@ -231,8 +243,8 @@ rule build_index:
     shell:
         "(set +u" 
         + " && source {params.source}" 
-        + " && bwa index {input.reference}"
-        + " ) > {log} 2>&1"
+        + " && {params.bwa} index {input.reference}"
+        + " || true ) > {log} 2>&1"
 
 rule build_genome:
     input: 
@@ -249,7 +261,7 @@ rule build_genome:
         "(set +u"
         + " && source {params.source}" 
         + " && cut -f1,2 {input} > {output}"
-        + " ) > {log} 2>&1"
+        + " || true ) > {log} 2>&1"
     
 rule index_reference:
     input: 

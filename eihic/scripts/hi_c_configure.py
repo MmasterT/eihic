@@ -128,6 +128,12 @@ class HI_CCONFIGURE:
         self.run_config["hpc_config"] = DEFAULT_HPC_CONFIG_FILE
         self.run_config["jira"]["jira_id"] = self.args.jira
         
+        # write bwa-mem2 option
+        if self.args.bm2:
+            self.run_config["bwa-mem2"] = 'True'
+        else:
+            self.run_config["bwa-mem2"] = 'False'
+        
         # write the new run config file
         with open(self.run_config_file, "w") as fh:
             yaml.dump(self.run_config, fh, sort_keys=False)
@@ -161,6 +167,12 @@ def main():
         "--force-reconfiguration",
         action="store_true",
         help="Force reconfiguration (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-bm2",
+        "--bwa_mem2",
+        default='False',
+        help="Use bwa-mem2 insted of bwa mem. This option use a lot more RAM, use with precaution. (default: %(default)s)",
     )
     args = parser.parse_args()
     HI_CCONFIGURE(args).run()

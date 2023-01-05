@@ -8,21 +8,24 @@
 fasta: /path/to/reference_genome.fa
 
 
-#Path/to/readsForward1,2,3,4\n
-#Path/to/readsReverse1,2,3,4\n
-#Path/to/reference/genome.fasta\n
-#Organism_name (just for naming)
+# Path/to/readsForward1,2,3,4\n
+# Path/to/readsReverse1,2,3,4\n
+# Path/to/reference/genome.fasta\n
+# Organism_name (just for naming)
 samples_csv: /path/to/sample_information.csv
 
-
+# use bwa-mem2 insted of bwa. up 2x faster algorithm but ~6x more demanding in RAM.
+bwa-mem2: 'False'
 # output folder name, NOT path
 output: ./output
 
 # output logs will be written to "logs" directory inside output folder
 logs: ./output/logs
+
 #####
 # END of input parameters
 #####
+
 
 
 #######################
@@ -35,7 +38,7 @@ source:
   snakemake: " snakamake-7.12.1_CBG "
 
 # 1 means true for the parameter and 0 means false. 
-#For formatting options refer to the HiCUP documention
+# For formatting options refer to the HiCUP documention
 # https://www.bioinformatics.babraham.ac.uk/projects/hicup/read_the_docs/html/index.html
 # shortest sequence is the shorthest sequence for a read after the HiCUP process 
 # (they recommend 50, less than that is at the risk of a keep invalid reads)

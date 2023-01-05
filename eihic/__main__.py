@@ -83,6 +83,7 @@ class HI_C:
         self.verbose = args.verbose
         self.dry_run = args.dry_run
         self.library = args.library
+        self.bm2 = args.bm2
         self.loaded_run_config = yaml.load(
             open(self.run_config), Loader=yaml.SafeLoader
         )
@@ -177,6 +178,12 @@ def main():
         "--force-reconfiguration",
         action="store_true",
         help="Force reconfiguration (default: %(default)s)",
+    )
+    parser_configure.add_argument(
+        "-bm2",
+        "--bwa_mem2",
+        action="store_true",
+        help="Use bwa-mem2 insted of bwa mem. This option use a lot more RAM, use with precaution. (default: %(default)s)",
     )
     parser_configure.set_defaults(handler=command_configure)
 
