@@ -43,7 +43,7 @@ class HI_CCONFIGURE:
         self.run_config = dict()
         self.args.logs = str(Path(self.args.output).resolve() / "logs")
         self.run_config_file = str()
-        self.bm2 = bool()
+        self.args.bm2 = bool(self.args.bm2)
 
     def process_run_config(self):
         with open(DEFAULT_CONFIG_FILE, "r") as fh:

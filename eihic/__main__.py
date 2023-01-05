@@ -83,7 +83,6 @@ class HI_C:
         self.verbose = args.verbose
         self.dry_run = args.dry_run
         self.library = args.library
-        self.bm2 = args.bm2
         self.loaded_run_config = yaml.load(
             open(self.run_config), Loader=yaml.SafeLoader
         )
