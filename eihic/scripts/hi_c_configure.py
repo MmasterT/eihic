@@ -109,8 +109,8 @@ class HI_CCONFIGURE:
                     print(f"Unlinking '{r2_path}' with --force")
                     r2_path.unlink()
 
-            Path(r1_path).symlink_to(Path(data["R1"][sample]))
-            Path(r2_path).symlink_to(Path(data["R2"][sample]))
+            Path(r1_path).symlink_to(os.path.abspath(data["R1"][sample]))
+            Path(r2_path).symlink_to(os.path.abspath(data["R2"][sample]))
         
         self.run_config["input_samples"] = data
 
@@ -118,7 +118,7 @@ class HI_CCONFIGURE:
         reference_dir = Path(self.args.output).joinpath("reference/genome")
         Path(reference_dir).mkdir(parents=True, exist_ok=True)
 
-        Path(reference_dir).joinpath(data["organism"]).symlink_to(Path(data["reference"]))
+        Path(reference_dir).joinpath(data["organism"]).symlink_to(os.path.abspath(data["reference"]))
 
         #Creates workflow and tmp directories
         tmp_dir = Path(self.args.output).joinpath("tmp")
