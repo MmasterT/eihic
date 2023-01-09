@@ -43,7 +43,7 @@ class HI_CCONFIGURE:
         self.run_config = dict()
         self.args.logs = str(Path(self.args.output).resolve() / "logs")
         self.run_config_file = str()
-        self.args.bwa_mem2 = bool(self.args.bm2)
+        self.args.bwa_mem2 = False
 
     def process_run_config(self):
         with open(DEFAULT_CONFIG_FILE, "r") as fh:
@@ -143,7 +143,7 @@ class HI_CCONFIGURE:
         self.run_config["jira"]["jira_id"] = self.args.jira
         
         # write bwa-mem2 option
-        if self.bm2:
+        if self.bwa_mem2:
             self.run_config["bwa-mem2"] = 'True'
         else:
             self.run_config["bwa-mem2"] = 'False'
