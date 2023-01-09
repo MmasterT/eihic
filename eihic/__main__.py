@@ -79,7 +79,7 @@ class HI_C:
         self.hpc_config = HI_C.check_exits(args.hpc_config)
         self.jobs = args.jobs
         self.latency_wait = args.latency_wait
-        self.no_posting = args.no_posting
+        self.no_posting = args.no_posting_off
         self.verbose = args.verbose
         self.dry_run = args.dry_run
         self.library = args.library
@@ -160,7 +160,7 @@ def main():
     parser_configure = subparsers.add_parser("configure", help="see `configure -h`")
     parser_configure.add_argument(
         "--samples_csv",
-        help=f"Provide sample information in tab-separated format. Please refer to the sample file is here: {DEFAULT_CONFIG_FILE} for more information above the csv format. A template is provided here {DEFAULT_SAMPLE_CSV_FILE}.  (default: %(default)s)",
+        help=f"Provide sample information in tab-separated format. Please refer to the sample file: {DEFAULT_CONFIG_FILE} for more information above the csv format. A template is provided here {DEFAULT_SAMPLE_CSV_FILE}.  (default: %(default)s)",
     )
     parser_configure.add_argument(
         "--jira",
@@ -194,7 +194,8 @@ def main():
     )
     parser_run.add_argument(
         "--library",
-        help=f"This pipeline supports the following library protocols for hi-c data: arima (2 enzymes protocol), and  omni-c. Provide the name (arima or omni-c) as the second positional argument after the sample file",
+        default="omni-c",
+        help="This pipeline supports the following library protocols for hi-c data: arima (2 enzymes protocol), and  omni-c. Provide the name (arima or omni-c) as the second positional argument after the sample file (default: %(default)s)",
     )
     parser_run.add_argument(
         "--hpc_config",
@@ -213,9 +214,9 @@ def main():
         help="Wait given seconds if an output file of a job is not present after the job finished (default: %(default)s)",
     )
     parser_run.add_argument(
-        "--no_posting",
-        action="store_true",
-        help="Use this flag if you are testing and do not want to post comments to JIRA tickets (default: %(default)s)",
+        "--no_posting_off",
+        action="store_false",
+        help="Use this flag if you want to post comments to JIRA tickets (default: %(default)s)",
     )
     parser_run.add_argument(
         "-v",

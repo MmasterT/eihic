@@ -43,7 +43,7 @@ class HI_CCONFIGURE:
         self.run_config = dict()
         self.args.logs = str(Path(self.args.output).resolve() / "logs")
         self.run_config_file = str()
-        self.args.bm2 = bool(self.args.bm2)
+        self.args.bwa_mem2 = bool(self.args.bm2)
 
     def process_run_config(self):
         with open(DEFAULT_CONFIG_FILE, "r") as fh:
@@ -109,10 +109,23 @@ class HI_CCONFIGURE:
                     print(f"Unlinking '{r2_path}' with --force")
                     r2_path.unlink()
 
-            Path(r1_path).symlink_to(data["R1"][sample])
-            Path(r2_path).symlink_to(data["R2"][sample])
+            Path(r1_path).symlink_to(Path(data["R1"][sample]))
+            Path(r2_path).symlink_to(Path(data["R2"][sample]))
         
         self.run_config["input_samples"] = data
+
+        #Create reference dir
+        reference_dir = Path(self.args.output).joinpath("reference/genome")
+        Path(reference_dir).mkdir(parents=True, exist_ok=True)
+
+        Path(reference_dir).joinpath(data["organism"]).symlink_to(Path(data["reference"]))
+
+        #Creates workflow and tmp directories
+        tmp_dir = Path(self.args.output).joinpath("tmp")
+        workflow_dir = Path(self.args.output).joinpath("workflow")
+
+        Path(tmp_dir).mkdir(parents=True, exist_ok=True)
+        Path(workflow_dir).mkdir(parents=True, exist_ok=True)
 
     def write_run_config(self):
         # output directory
@@ -151,7 +164,7 @@ def main():
     parser = argparse.ArgumentParser(description="Script to create the run_config.yaml")
     parser.add_argument(
         "--samples_csv",
-        help=f"Provide sample information in csv format. Please refer to the sample file is here: {DEFAULT_CONFIG_FILE} for more information above the tsv format. A template is provided here {DEFAULT_SAMPLE_CSV_FILE}.  (default: %(default)s)",
+        help=f"Provide sample information in csv format. Please refer to the sample file is here: {DEFAULT_CONFIG_FILE}, for more information above the tsv format. A template is provided here {DEFAULT_SAMPLE_CSV_FILE}.  (default: %(default)s)",
     )
     parser.add_argument(
         "--jira",
