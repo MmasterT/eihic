@@ -228,13 +228,13 @@ rule mapping_to_reference:
 
 rule build_index:
     input: 
-        reference = f"{cwd}/{REFERENCE}", 
+        reference = f"{cwd}/reference/genome/{ORGANISM}.fasta", 
         index = f"{cwd}/reference/genome/{ORGANISM}.fasta.fai", 
         genome = f"{cwd}/reference/genome/{ORGANISM}.genome"
     output: 
         f"{cwd}/reference/genome/{ORGANISM}.fasta.amb"
     params:
-        source = config["source"]["omni-c"]
+        source = config["source"]["omni-c"],
         bwa = bwa,
     resources:
         mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
@@ -248,9 +248,9 @@ rule build_index:
 
 rule build_genome:
     input: 
-        f"reference/genome/{ORGANISM}.fasta.fai"
+        f"{cwd}/reference/genome/{ORGANISM}.fasta.fai"
     output: 
-        f"reference/genome/{ORGANISM}.genome",
+        f"{cwd}/reference/genome/{ORGANISM}.genome",
     log:
         os.path.join(cwd, "logs/build_genome.log")
     params:
@@ -265,9 +265,9 @@ rule build_genome:
     
 rule index_reference:
     input: 
-        f"{REFERENCE}"      
+        f"{cwd}/reference/genome/{ORGANISM}.fasta"      
     output: 
-        f"reference/genome/{ORGANISM}.fasta.fai"   
+        f"{cwd}/reference/genome/{ORGANISM}.fasta.fai"   
     log:
         os.path.join(cwd, "logs/index_reference.log")
     resources:
