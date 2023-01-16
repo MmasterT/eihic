@@ -203,7 +203,7 @@ rule mapping_to_reference:
     input:
         R1=R1,
         R2=R2,
-        bwa_inx = f"{cwd}/reference/genome/{ORGANISM}.fasta.amb",
+        bwa_inx = f"{output}/reference/genome/{ORGANISM}.fasta.amb",
         reference= f"{REFERENCE}",
         index= f"reference/genome/{ORGANISM}.fasta.fai"
     output: 
@@ -228,11 +228,11 @@ rule mapping_to_reference:
 
 rule build_index:
     input: 
-        reference = f"{cwd}/reference/genome/{ORGANISM}.fasta", 
-        index = f"{cwd}/reference/genome/{ORGANISM}.fasta.fai", 
-        genome = f"{cwd}/reference/genome/{ORGANISM}.genome"
+        reference = f"{output}/reference/genome/{ORGANISM}.fasta", 
+        index = f"{output}/reference/genome/{ORGANISM}.fasta.fai", 
+        genome = f"{output}/reference/genome/{ORGANISM}.genome"
     output: 
-        f"{cwd}/reference/genome/{ORGANISM}.fasta.amb"
+        f"{output}/reference/genome/{ORGANISM}.fasta.amb"
     params:
         source = config["source"]["omni-c"],
         bwa = bwa,
@@ -248,9 +248,9 @@ rule build_index:
 
 rule build_genome:
     input: 
-        f"{cwd}/reference/genome/{ORGANISM}.fasta.fai"
+        f"{output}/reference/genome/{ORGANISM}.fasta.fai"
     output: 
-        f"{cwd}/reference/genome/{ORGANISM}.genome",
+        f"{output}/reference/genome/{ORGANISM}.genome",
     log:
         os.path.join(cwd, "logs/build_genome.log")
     params:
@@ -265,9 +265,9 @@ rule build_genome:
     
 rule index_reference:
     input: 
-        f"{cwd}/reference/genome/{ORGANISM}.fasta"      
+        f"{output}/reference/genome/{ORGANISM}.fasta"      
     output: 
-        f"{cwd}/reference/genome/{ORGANISM}.fasta.fai"   
+        f"{output}/reference/genome/{ORGANISM}.fasta.fai"   
     log:
         os.path.join(cwd, "logs/index_reference.log")
     resources:
