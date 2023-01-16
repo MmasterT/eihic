@@ -119,7 +119,7 @@ class HI_CCONFIGURE:
         reference_dir = Path(self.args.output).joinpath("reference/genome")
         Path(reference_dir).mkdir(parents=True, exist_ok=True)
 
-        Path(reference_dir).joinpath(data["organism"]).symlink_to(os.path.abspath(data["reference"]))
+        Path(reference_dir).joinpath(data["organism"] + ".fasta").symlink_to(os.path.abspath(data["reference"]))
 
         #Creates workflow and tmp directories
         tmp_dir = Path(self.args.output).joinpath("tmp")

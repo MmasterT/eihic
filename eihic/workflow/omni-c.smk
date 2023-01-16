@@ -33,7 +33,8 @@ R1 = config["input_samples"]["R1"]
 R2 = config["input_samples"]["R2"]
 REFERENCE = config["input_samples"]["reference"]
 ORGANISM = config["input_samples"]["organism"]
-cwd = os.getcwd()
+output = config["output"]
+logs = config["logs"]
 
 if config['bwa-mem2'] == 'True':
     bwa = 'bwa-mem2'
@@ -54,23 +55,21 @@ else:
     R1 = " ".join(R1)
     R2 = " ".join(R2)
 
-output = os.path.abspath(config["output"])
-logs_dir = os.path.abspath(config["logs"])
 
 shell.prefix("set -eo pipefail; ")
 
 rule all:
     input: 
-        f"results/{ORGANISM}_hi-c_library_complexity.txt", 
-        f"results/{ORGANISM}_stats_library.txt", 
-        f"{output}/workflow/samtools/{ORGANISM}.sorted.bam"
+        f"{OUTPUT}/results/{ORGANISM}_hi-c_library_complexity.txt", 
+        f"{OUTPUT}/results/{ORGANISM}_stats_library.txt", 
+        f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
 
 
 rule library_complexity:
-    input: f"{output}/workflow/samtools/{ORGANISM}.sorted.bam"
-    output: f"results/{ORGANISM}_hi-c_library_complexity.txt"
+    input: f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
+    output: f"{OUTPUT}/results/{ORGANISM}_hi-c_library_complexity.txt"
     log:
-        os.path.join(cwd, "logs/library_complexity.log")
+        os.path.join(logs, "library_complexity.log")
     params:
         source = config["source"]["omni-c"]
     resources:
@@ -83,10 +82,10 @@ rule library_complexity:
         + " ) > {log} 2>&1"
 
 rule get_stats:
-    input: f"{output}/workflow/pairtools/stats.txt"
-    output: f"results/{ORGANISM}_stats_library.txt"
+    input: f"{OUTPUT}/workflow/pairtools/stats.txt"
+    output: f"{OUTPUT}/results/{ORGANISM}_stats_library.txt"
     log:
-        os.path.join(cwd, "logs/get_stats.log")
+        os.path.join(logs, "get_stats.log")
     params:
         source = config["source"]["omni-c"]
     resources:
@@ -99,12 +98,12 @@ rule get_stats:
 
 
 rule sort_bam:
-    input: f"{output}/workflow/pairtools/{ORGANISM}.bam"
+    input: f"{OUTPUT}/workflow/pairtools/{ORGANISM}.bam"
     output: 
-        sort = f"{output}/workflow/samtools/{ORGANISM}.sorted.bam", 
-        index = f"{output}/workflow/samtools/{ORGANISM}.sorted.bam.bai"
+        sort = f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam", 
+        index = f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam.bai"
     log:
-        os.path.join(cwd, "logs/sort_bam.log")
+        os.path.join(logs, "sort_bam.log")
     threads:
         int(HPC_CONFIG.get_cores("sort_bam"))
     params:
@@ -119,12 +118,12 @@ rule sort_bam:
         + " ) > {log} 2>&1"
 
 rule unsorted_bam:
-    input: f"{output}/workflow/pairtools/dedup.pairbam"
+    input: f"{OUTPUT}/workflow/pairtools/dedup.pairbam"
     output: 
-        maps = f"{output}/workflow/pairtools/mapped.pairs.gz", 
-        bam = f"{output}/workflow/pairtools/{ORGANISM}.bam"
+        maps = f"{OUTPUT}/workflow/pairtools/mapped.pairs.gz", 
+        bam = f"{OUTPUT}/workflow/pairtools/{ORGANISM}.bam"
     log:
-        os.path.join(cwd, "logs/unsorted_bam.log")
+        os.path.join(logs, "unsorted_bam.log")
     threads:
         int(HPC_CONFIG.get_cores("unsorted_bam"))/2
     params:
@@ -139,12 +138,12 @@ rule unsorted_bam:
         + " ) >  {log} 2>&1"
 
 rule pairtools_dedup:
-    input: f"{output}/workflow/pairtools/sorted.pairbam.gz"
+    input: f"{OUTPUT}/workflow/pairtools/sorted.pairbam.gz"
     output: 
-        out = f"{output}/workflow/pairtools/dedup.pairbam", 
-        stats =  f"{output}/workflow/pairtools/stats.txt"
+        out = f"{OUTPUT}/workflow/pairtools/dedup.pairbam", 
+        stats =  f"{OUTPUT}/workflow/pairtools/stats.txt"
     log:
-        os.path.join(cwd, "logs/pairtools_dedup.log")
+        os.path.join(logs, "pairtools_dedup.log")
     params:
         source = config["source"]["omni-c"]
     threads:
@@ -158,14 +157,14 @@ rule pairtools_dedup:
     
 
 rule pairtools_sort:
-    input:f"{output}/workflow/pairtools/parsed_pairbam.gz"
-    output:f"{output}/workflow/pairtools/sorted.pairbam.gz"
+    input:f"{OUTPUT}/workflow/pairtools/parsed_pairbam.gz"
+    output:f"{OUTPUT}/workflow/pairtools/sorted.pairbam.gz"
     params:
         source = config["source"]["omni-c"]
     threads:
         int(HPC_CONFIG.get_cores("pairtools_sort"))
     log:
-        os.path.join(cwd, "logs/pairtools_sort.log")
+        os.path.join(logs, "pairtools_sort.log")
     resources:
         mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
     shell:
@@ -177,15 +176,15 @@ rule pairtools_sort:
 
 rule unique_unique:
     input: 
-        align = f"{output}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
-        reference = f"{REFERENCE}"
+        align = f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
+        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta"
     output: 
-        unique = f"{output}/workflow/pairtools/parsed_pairbam.gz",
-        stats = f"{output}/workflow/pairtools/parsed_pairbam.stats"
+        unique = f"{OUTPUT}/workflow/pairtools/parsed_pairbam.gz",
+        stats = f"{OUTPUT}/workflow/pairtools/parsed_pairbam.stats"
     threads:
         HPC_CONFIG.get_cores("unique_unique")
     log:
-        os.path.join(cwd, "logs/unique_unique.log")
+        os.path.join(logs, "unique_unique.log")
     resources:
         mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
     params: source = config["source"]["omni-c"]
@@ -203,18 +202,18 @@ rule mapping_to_reference:
     input:
         R1=R1,
         R2=R2,
-        bwa_inx = f"{output}/reference/genome/{ORGANISM}.fasta.amb",
-        reference= f"{REFERENCE}",
-        index= f"reference/genome/{ORGANISM}.fasta.fai"
+        bwa_inx = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.amb",
+        reference= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
+        index= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"
     output: 
-        f"{output}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam"
+        f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam"
     params: 
         source = config["source"]["omni-c"],
         bwa = bwa,
     threads:
         int(HPC_CONFIG.get_cores("mapping_to_reference"))
     log:
-        os.path.join(cwd, "logs/mapping_to_reference.log")
+        os.path.join(logs, "mapping_to_reference.log")
     resources:
         mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
     shell:
@@ -228,18 +227,18 @@ rule mapping_to_reference:
 
 rule build_index:
     input: 
-        reference = f"{output}/reference/genome/{ORGANISM}.fasta", 
-        index = f"{output}/reference/genome/{ORGANISM}.fasta.fai", 
-        genome = f"{output}/reference/genome/{ORGANISM}.genome"
+        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta", 
+        index = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai", 
+        genome = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output: 
-        f"{output}/reference/genome/{ORGANISM}.fasta.amb"
+        f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.amb"
     params:
         source = config["source"]["omni-c"],
         bwa = bwa,
     resources:
         mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
     log:
-        os.path.join(cwd, "logs/build_index.log")
+        os.path.join(logs, "build_index.log")
     shell:
         "(set +u" 
         + " && source {params.source}" 
@@ -248,11 +247,11 @@ rule build_index:
 
 rule build_genome:
     input: 
-        f"{output}/reference/genome/{ORGANISM}.fasta.fai"
+        f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"
     output: 
-        f"{output}/reference/genome/{ORGANISM}.genome",
+        f"{OUTPUT}/reference/genome/{ORGANISM}.genome",
     log:
-        os.path.join(cwd, "logs/build_genome.log")
+        os.path.join(logs, "build_genome.log")
     params:
         source = config["source"]["omni-c"]
     resources:
@@ -265,11 +264,11 @@ rule build_genome:
     
 rule index_reference:
     input: 
-        f"{output}/reference/genome/{ORGANISM}.fasta"      
+        f"{OUTPUT}/reference/genome/{ORGANISM}.fasta"      
     output: 
-        f"{output}/reference/genome/{ORGANISM}.fasta.fai"   
+        f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"   
     log:
-        os.path.join(cwd, "logs/index_reference.log")
+        os.path.join(logs, "index_reference.log")
     resources:
         mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
     params:
