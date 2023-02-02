@@ -33,11 +33,12 @@ R1 = config["input_samples"]["R1"]
 R2 = config["input_samples"]["R2"]
 REFERENCE = config["input_samples"]["reference"]
 ORGANISM = config["input_samples"]["organism"]
-output = config["output"]
+OUTPUT = config["output"]
 logs = config["logs"]
 
 if config['bwa-mem2'] == 'True':
     bwa = 'bwa-mem2'
+    threading = "-p {threads}"
 elif config['bwa-mem2'] == 'False':
     bwa = 'bwa'
 else:
@@ -63,7 +64,6 @@ rule all:
         f"{OUTPUT}/results/{ORGANISM}_hi-c_library_complexity.txt", 
         f"{OUTPUT}/results/{ORGANISM}_stats_library.txt", 
         f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
-
 
 rule library_complexity:
     input: f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
@@ -235,15 +235,16 @@ rule build_index:
     params:
         source = config["source"]["omni-c"],
         bwa = bwa,
-    resources:
-        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
+        threading = f"{threading}",
+    threads:
+        int(HPC_CONFIG.get_memory("build_index"))
     log:
         os.path.join(logs, "build_index.log")
     shell:
         "(set +u" 
         + " && source {params.source}" 
-        + " && {params.bwa} index {input.reference}"
-        + " || true ) > {log} 2>&1"
+        + " && {params.bwa} index {params.threading}\"
+        + " {input.reference} || true ) > {log} 2>&1"
 
 rule build_genome:
     input: 

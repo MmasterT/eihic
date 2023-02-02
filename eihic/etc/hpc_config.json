@@ -14,9 +14,6 @@
         "cores": 16,
         "memory": 50000
     },
-    "bwt_2_index": {
-        "memory": 20000
-    }, 
     "def": {
         "cores": 4
     },
@@ -43,5 +40,9 @@
     "sort_bam": {
         "memory": 60000,
         "cores": 8
-    }
+    },
+    "build_index": {
+        "memory": 160000,
+        "cores": 8
+    }    
 }
