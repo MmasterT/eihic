@@ -200,8 +200,8 @@ rule unique_unique:
 
 rule mapping_to_reference:
     input:
-        R1=R1,
-        R2=R2,
+        R1=f"{OUTPUT}/reads/{R1}",
+        R2=f"{OUTPUT}/reads/{R1}",,
         bwa_inx = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.amb",
         reference= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
         index= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"
