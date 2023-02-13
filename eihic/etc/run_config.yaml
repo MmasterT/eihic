@@ -33,7 +33,7 @@ logs: ./output/logs
 # NOTE: below tools are required for the snakemake pipeline
 #######################
 source:
-  omni-c: " omni-c-20210720_a30d45f_bwamem2_CBG"
+  omni-c: " omni-c-20210720_a30d45f_CBG"
   arima: " chic-1.4_CBG"
   snakemake: " snakamake-7.12.1_CBG "
 

@@ -40,7 +40,8 @@ if config['bwa-mem2'] == 'True':
     bwa = 'bwa-mem2'
     threading = "-p {threads}"
 elif config['bwa-mem2'] == 'False':
-    bwa = 'bwa'
+    bwa = 'bwa',
+    threading = ''
 else:
     sys.exit("There is an error related to the config file.\n"
         + "Check your configuration file is not corrupted.\n"
@@ -201,7 +202,7 @@ rule unique_unique:
 rule mapping_to_reference:
     input:
         R1=f"{OUTPUT}/reads/{R1}",
-        R2=f"{OUTPUT}/reads/{R1}",,
+        R2=f"{OUTPUT}/reads/{R1}",
         bwa_inx = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.amb",
         reference= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
         index= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"
@@ -220,8 +221,8 @@ rule mapping_to_reference:
         "(set +u" 
         + " && source {params.source}" 
         + " && {params.bwa} mem -5SP -T0 -t {threads} {input.reference}" 
-        + " <(zcat {input.R1}) <(zcat {input.R2})  |"
-        + " samtools -@ {threads} -bS |"
+        + " <(zcat {input.R1}) <(zcat {input.R2}) |"
+        + " samtools view -@ {threads} -bS - |"
         + " samtools sort -@ {threads} > {output}"
         + " ) > {log} 2>&1"
 
@@ -237,13 +238,13 @@ rule build_index:
         bwa = bwa,
         threading = f"{threading}",
     threads:
-        int(HPC_CONFIG.get_memory("build_index"))
+        int(HPC_CONFIG.get_cores("build_index"))
     log:
         os.path.join(logs, "build_index.log")
     shell:
         "(set +u" 
         + " && source {params.source}" 
-        + " && {params.bwa} index {params.threading}\"
+        + " && {params.bwa} index {params.threading} \ "
         + " {input.reference} || true ) > {log} 2>&1"
 
 rule build_genome:
@@ -261,7 +262,7 @@ rule build_genome:
         "(set +u"
         + " && source {params.source}" 
         + " && cut -f1,2 {input} > {output}"
-        + " || true ) > {log} 2>&1"
+        + " ) > {log} 2>&1"
     
 rule index_reference:
     input: 
@@ -276,6 +277,6 @@ rule index_reference:
         source = config["source"]["omni-c"]
     shell:
         "(set +u"
-        + " source {params.source}" 
-        + " && samtools faidx {input} || true "
+        + " && source {params.source}" 
+        + " && samtools faidx {input} "
         + ") > {log} 2>&1"
