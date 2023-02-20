@@ -122,7 +122,7 @@ rule unsorted_bam:
     input: f"{OUTPUT}/workflow/pairtools/dedup.pairbam"
     output: 
         maps = f"{OUTPUT}/workflow/pairtools/mapped.pairs.gz", 
-        bam = f"{OUTPUT}/workflow/pairtools/{ORGANISM}.bam"
+        bam = temp(f"{OUTPUT}/workflow/pairtools/{ORGANISM}.bam")
     log:
         os.path.join(logs, "unsorted_bam.log")
     threads:
@@ -141,7 +141,7 @@ rule unsorted_bam:
 rule pairtools_dedup:
     input: f"{OUTPUT}/workflow/pairtools/sorted.pairbam.gz"
     output: 
-        out = f"{OUTPUT}/workflow/pairtools/dedup.pairbam", 
+        out = temp(f"{OUTPUT}/workflow/pairtools/dedup.pairbam"), 
         stats =  f"{OUTPUT}/workflow/pairtools/stats.txt"
     log:
         os.path.join(logs, "pairtools_dedup.log")
@@ -180,7 +180,7 @@ rule unique_unique:
         align = f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
         reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta"
     output: 
-        unique = f"{OUTPUT}/workflow/pairtools/parsed_pairbam.gz",
+        unique = temp(f"{OUTPUT}/workflow/pairtools/parsed_pairbam.gz"),
         stats = f"{OUTPUT}/workflow/pairtools/parsed_pairbam.stats"
     threads:
         HPC_CONFIG.get_cores("unique_unique")
