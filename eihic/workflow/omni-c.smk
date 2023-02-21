@@ -121,7 +121,7 @@ rule sort_bam:
 rule unsorted_bam:
     input: f"{OUTPUT}/workflow/pairtools/dedup.pairbam"
     output: 
-        maps = f"{OUTPUT}/workflow/pairtools/mapped.pairs.gz", 
+        maps = f"{OUTPUT}/workflow/pairtools/mapped.pairs", 
         bam = temp(f"{OUTPUT}/workflow/pairtools/{ORGANISM}.bam")
     log:
         os.path.join(logs, "unsorted_bam.log")
@@ -139,7 +139,7 @@ rule unsorted_bam:
         + " ) >  {log} 2>&1"
 
 rule pairtools_dedup:
-    input: f"{OUTPUT}/workflow/pairtools/sorted.pairbam.gz"
+    input: f"{OUTPUT}/workflow/pairtools/sorted.pairbam"
     output: 
         out = temp(f"{OUTPUT}/workflow/pairtools/dedup.pairbam"), 
         stats =  f"{OUTPUT}/workflow/pairtools/stats.txt"
@@ -158,8 +158,8 @@ rule pairtools_dedup:
     
 
 rule pairtools_sort:
-    input:f"{OUTPUT}/workflow/pairtools/parsed_pairbam.gz"
-    output:f"{OUTPUT}/workflow/pairtools/sorted.pairbam.gz"
+    input:f"{OUTPUT}/workflow/pairtools/parsed_pairbam"
+    output:f"{OUTPUT}/workflow/pairtools/sorted.pairbam"
     params:
         source = config["source"]["omni-c"]
     threads:
@@ -171,7 +171,7 @@ rule pairtools_sort:
     shell:
         "(set +u" 
         + " && source {params.source}" 
-        + " &&  pairtools sort --nproc {threads} --tmpdir=./tmp {input} > {output}"
+        + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp {{input}} > {{output}}"
         + " ) > {log} 2>&1"
     
 
@@ -180,7 +180,7 @@ rule unique_unique:
         align = f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
         reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta"
     output: 
-        unique = temp(f"{OUTPUT}/workflow/pairtools/parsed_pairbam.gz"),
+        unique = temp(f"{OUTPUT}/workflow/pairtools/parsed_pairbam"),
         stats = f"{OUTPUT}/workflow/pairtools/parsed_pairbam.stats"
     threads:
         HPC_CONFIG.get_cores("unique_unique")
