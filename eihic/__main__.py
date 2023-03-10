@@ -121,18 +121,19 @@ class HI_C:
         elif self.library == "arima":
             cmd = (
                 f"snakemake --snakefile {script_dir}/arima.smk"
-                f" --configfile {self.run_config} --latency-wait {self.latency_wait} --jobs {self.jobs} --cluster-config {self.hpc_config}"
+                f" --configfile {self.run_config} --latency-wait {self.latency_wait} --jobs {self.jobs} --nolock --cluster-config {self.hpc_config}"
                 f" --config notify={self.no_posting} verbose={self.verbose}"
-                f" --drmaa ' -p {{cluster.partition}} -c {{cluster.cores}} --mem={{cluster.memory}} -J {{cluster.name}} -o {self.logs}/{{rule}}.%N.%j.cluster.log' --printshellcmds --reason "
+                f" --drmaa ' -C AVX-512 -p {{cluster.partition}} -c {{cluster.cores}} --mem={{cluster.memory}} -J {{cluster.name}} -o {self.logs}/{{rule}}.%N.%j.cluster.log' --printshellcmds --reason "
             )
         elif self.library == "omni-c":
             cmd = (
                 f"snakemake --snakefile {script_dir}/omni-c.smk"
-                f" --configfile {self.run_config} --latency-wait {self.latency_wait} --jobs {self.jobs} --cluster-config {self.hpc_config}"
+                f" --configfile {self.run_config} --latency-wait {self.latency_wait} --jobs {self.jobs} --nolock --cluster-config {self.hpc_config}"
                 f" --config notify={self.no_posting} verbose={self.verbose}"
                 f" --drmaa ' -C AVX-512 -p {{cluster.partition}} -c {{cluster.cores}} --mem={{cluster.memory}} -J {{cluster.name}} -o {self.logs}/{{rule}}.%N.%j.cluster.log' --printshellcmds --reason "
             )
 
+        
         # for universal_newlines - https://stackoverflow.com/a/4417735
         p = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True

@@ -97,6 +97,26 @@ rule get_stats:
         + " && get_qc.py -p {input} > {output}"
         + " ) > {log} 2>&1"
 
+rule uniquemapping_pretext:
+    input:
+        f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
+    output: 
+        f"{OUTPUT}/workflow/pretext/{ORGANISM}_unique_mapping.pretext"
+    params: 
+        source = config["source"]["omni-c"],
+        source_2 = config["source"]["uniquemapping_pretext"]
+    threads:
+        int(HPC_CONFIG.get_cores("uniquemapping_pretext"))
+    log:
+        os.path.join(logs, "uniquemapping_pretext.log")
+    resources:o_reference")
+    shell:
+        mem_mb = HPC_CONFIG.get_memory("mapping_t
+        "(set +u" 
+        + " && source {params.source}" 
+        + " && source {params.source_2}"
+        + " && samtool view -h {input} | PretextMap -o {output}"
+        + " ) > {log} 2>&1"
 
 rule sort_bam:
     input: f"{OUTPUT}/workflow/pairtools/{ORGANISM}.bam"
@@ -114,7 +134,7 @@ rule sort_bam:
     shell:
         "(set +u"
         + " && source {params.source}"
-        + " && samtools sort -@ {threads} -T ./workflow/tmp.bam -o {output.sort} {input}"
+        + " && samtools sort -m 4G -@ {threads} -T ./workflow/tmp.bam -o {output.sort} {input}"
         + " && samtools index {output.sort}"
         + " ) > {log} 2>&1"
 
@@ -199,6 +219,27 @@ rule unique_unique:
         + " ) > {log} 2>&1"
 
 
+rule multimapping_pretext:
+    input:
+        f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam"
+    output: 
+        f"{OUTPUT}/workflow/pretext/{ORGANISM}_multi_mapping.pretext"
+    params: 
+        source = config["source"]["omni-c"],
+        source_2 = config["source"]["pretext"],
+    threads:
+        int(HPC_CONFIG.get_cores("multimapping_pretext"))
+    log:
+        os.path.join(logs, "multimapping_pretext.log")
+    resources:
+        mem_mb = HPC_CONFIG.get_memory("multimapping_pretext")
+    shell:
+        "(set +u" 
+        + " && source {params.source}"
+        + " && source {params.source_2}"
+        + " && samtool view -h {input} | PretextMap -o {output}"
+        + " ) > {log} 2>&1"
+
 rule mapping_to_reference:
     input:
         R1=f"{OUTPUT}/reads/{R1}",
@@ -223,7 +264,7 @@ rule mapping_to_reference:
         + " && {params.bwa} mem -5SP -T0 -t {threads} {input.reference}" 
         + " <(zcat {input.R1}) <(zcat {input.R2}) |"
         + " samtools view -@ {threads} -bS - |"
-        + " samtools sort -@ {threads} > {output}"
+        + " samtools sort -m 4G -@ {threads} > {output}"
         + " ) > {log} 2>&1"
 
 rule build_index:

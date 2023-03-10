@@ -3,5 +3,4 @@ tabulate == 0.8
 snakemake == 7.12.1
 drmaa >= 0.7.9
 yahs >= 1.2
-pbgzip
-pigz
+

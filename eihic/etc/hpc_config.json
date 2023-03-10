@@ -11,15 +11,15 @@
         "account"   : "olivera@nbi.ac.uk"
     },
     "hicup_run": {
-        "cores": 16,
-        "memory": 50000
+        "cores": 28,
+        "memory": 90000
     },
     "def": {
         "cores": 4
     },
     "mapping_to_reference": {
-        "cores": 16,
-        "memory": 120000
+        "cores": 28,
+        "memory": 180000
     },
     "unique_unique": {
         "cores": 16,
@@ -42,6 +42,14 @@
         "cores": 8
     },
     "build_index": {
+        "memory": 160000,
+        "cores": 8
+    },
+    "uniquemapping_pretext": {
+        "memory": 30000,
+        "cores": 8
+    },
+    "multimapping_pretext": {
         "memory": 160000,
         "cores": 8
     }    
