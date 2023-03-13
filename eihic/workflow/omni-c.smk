@@ -64,7 +64,9 @@ rule all:
     input: 
         f"{OUTPUT}/results/{ORGANISM}_hi-c_library_complexity.txt", 
         f"{OUTPUT}/results/{ORGANISM}_stats_library.txt", 
-        f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
+        f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam",
+        f"{OUTPUT}/workflow/pretext/{ORGANISM}_unique_mapping.pretext",
+        f"{OUTPUT}/workflow/pretext/{ORGANISM}_multi_mapping.pretext"
 
 rule library_complexity:
     input: f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
@@ -74,7 +76,7 @@ rule library_complexity:
     params:
         source = config["source"]["omni-c"]
     resources:
-        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
+        mem_mb = HPC_CONFIG.get_memory("sort_bam")
     shell:
         "(set +u"
         + " && source {params.source}"
@@ -90,7 +92,7 @@ rule get_stats:
     params:
         source = config["source"]["omni-c"]
     resources:
-        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
+        mem_mb = HPC_CONFIG.get_memory("sort_bam")
     shell:
         "(set +u" 
         + " && source {params.source}"
@@ -109,9 +111,10 @@ rule uniquemapping_pretext:
         int(HPC_CONFIG.get_cores("uniquemapping_pretext"))
     log:
         os.path.join(logs, "uniquemapping_pretext.log")
-    resources:o_reference")
+    resources:
+        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
     shell:
-        mem_mb = HPC_CONFIG.get_memory("mapping_t
+        
         "(set +u" 
         + " && source {params.source}" 
         + " && source {params.source_2}"
@@ -130,11 +133,12 @@ rule sort_bam:
     params:
         source = config["source"]["omni-c"]
     resources:
-        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
+        mem_mb = HPC_CONFIG.get_memory("sort_bam")
     shell:
         "(set +u"
         + " && source {params.source}"
-        + " && samtools sort -m 4G -@ {threads} -T ./workflow/tmp.bam -o {output.sort} {input}"
+        + f" && samtools sort -m 4G -@ {{threads}} -T {OUTPUT}/workflow/tmp.bam"
+        + "-o {output.sort} {input}"
         + " && samtools index {output.sort}"
         + " ) > {log} 2>&1"
 
@@ -150,7 +154,7 @@ rule unsorted_bam:
     params:
         source = config["source"]["omni-c"]
     resources:
-        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
+        mem_mb = HPC_CONFIG.get_memory("unsorted_bam")
     shell:
         "(set +u"
         + " && source {params.source}" 
@@ -239,6 +243,7 @@ rule multimapping_pretext:
         + " && source {params.source_2}"
         + " && samtool view -h {input} | PretextMap -o {output}"
         + " ) > {log} 2>&1"
+
 
 rule mapping_to_reference:
     input:
