@@ -133,7 +133,7 @@ class HI_C:
                 f" --drmaa ' -C AVX-512 -p {{cluster.partition}} -c {{cluster.cores}} --mem={{cluster.memory}} -J {{cluster.name}} -o {self.logs}/{{rule}}.%N.%j.cluster.log' --printshellcmds --reason "
             )
 
-        
+
         # for universal_newlines - https://stackoverflow.com/a/4417735
         p = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True
@@ -191,7 +191,7 @@ def main():
     parser_run = subparsers.add_parser("run", help="see `run -h`")
     parser_run.add_argument(
         "run_config",
-        help=f"Provide run configuration YAML. Run 'eigatk configure -h' to generate the run configuration YAML file. (Description template file is here: {DEFAULT_CONFIG_FILE})",
+        help=f"Provide run configuration YAML. Run 'eihic configure -h' to generate the run configuration YAML file. (Description template file is here: {DEFAULT_CONFIG_FILE})",
     )
     parser_run.add_argument(
         "--library",

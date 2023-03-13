@@ -40,6 +40,7 @@ source:
   seqtk: " seqtk-1.3_CBG "
   cooler: " cooler-0.1.0_CBG "
   pretext: " pretext-0.1.0_CBG  "
+  minimap2: " minimap2-2.22_CBG  "
 # 1 means true for the parameter and 0 means false. 
 # For formatting options refer to the HiCUP documention
 # https://www.bioinformatics.babraham.ac.uk/projects/hicup/read_the_docs/html/index.html

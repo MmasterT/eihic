@@ -52,5 +52,14 @@
     "multimapping_pretext": {
         "memory": 160000,
         "cores": 8
-    }    
+    },"merge_bam": {
+        "memory": 60000,
+        "cores": 8
+    },"minimap2": {
+        "memory": 35000,
+        "cores": 8
+    },"scaffold_yahs": {
+        "memory": 120000,
+        "cores": 8
+    }
 }
