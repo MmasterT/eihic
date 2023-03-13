@@ -32,15 +32,17 @@ logs: ./output/logs
 # source required tools and provide parameters
 # NOTE: below tools are required for the snakemake pipeline
 #######################
+
 source:
   omni-c: " omni-c-20210720_a30d45f_CBG"
   arima: " chic-1.4_CBG"
   snakemake: " snakamake-7.12.1_CBG "
   yahs: " yahs-1.2a.2_CBG "
   seqtk: " seqtk-1.3_CBG "
-  cooler: " cooler-0.1.0_CBG "
+  cooler: " cooler-0.9.1_CBG "
   pretext: " pretext-0.1.0_CBG  "
   minimap2: " minimap2-2.22_CBG  "
+
 # 1 means true for the parameter and 0 means false. 
 # For formatting options refer to the HiCUP documention
 # https://www.bioinformatics.babraham.ac.uk/projects/hicup/read_the_docs/html/index.html

@@ -151,13 +151,22 @@ The installation of the Arima software is sourced from a fork of the original re
 
 https://github.com/MmasterT/CHiC
 
+### Pairbix
+
+### Cooler
+
+### PretextMap
+
+### TIDK
+
+### Mosdepth
+
+### YaHS
+
+### Minimap2
 
 ## To Do's
-
 
 - find how to delete the bug that does not let you use absoulth path for the files
 - use bwa-mem 2 to make analysis fastaer for small genomes (too resource demanding for big genomes)
 - add other relevant library preps for hi-c
-- add the scaffolding step in a pipeline here
-- create the contact maps before and after the scaffolding.
-- Include pigz andd pigbz in the environment to multithread compresion and uncompresion.
