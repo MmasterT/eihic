@@ -32,7 +32,7 @@ if not Path(config["jira"]["password_file"]).is_file() or not jira_id:
 REFERENCE = config["input_samples"]["reference"]
 ORGANISM = config["input_samples"]["organism"]
 OUTPUT = config["output"]
-LONG_READS = config["input_samples"]["long_reads"]
+LONG_READS = config["input_samples"]["hifi_reads"]
 logs = config["logs"]
 
 
@@ -44,7 +44,6 @@ rule get_coverage:
     input:
         f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
     output:
-        
     shell: 
 
 rule merge_bam:

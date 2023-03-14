@@ -52,14 +52,29 @@
     "multimapping_pretext": {
         "memory": 160000,
         "cores": 8
-    },"merge_bam": {
+    },
+    "merge_bam": {
         "memory": 60000,
         "cores": 8
-    },"minimap2": {
-        "memory": 35000,
+    },
+    "minimap2": {
+        "memory": 45000,
         "cores": 8
-    },"scaffold_yahs": {
+    },
+    "scaffold_yahs": {
         "memory": 120000,
         "cores": 8
+    },
+    "multimapping_pairtools": {
+        "memory": 120000,
+        "cores": 16 
+    },
+    "cooler_unique": {
+        "memory": 120000,
+        "cores": 16
+    },
+    "cooler_all": {
+        "memory": 100000,
+        "cores": 12
     }
 }

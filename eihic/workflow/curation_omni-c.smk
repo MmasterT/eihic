@@ -64,7 +64,9 @@ rule all:
     input: 
         f"{OUTPUT}/results/{ORGANISM}_hi-c_library_complexity.txt", 
         f"{OUTPUT}/results/{ORGANISM}_stats_library.txt", 
-        f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
+        f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam",
+        f"{OUTPUT}/workflow/pretext/{ORGANISM}_unique_mapping.pretext",
+        f"{OUTPUT}/workflow/pretext/{ORGANISM}_multi_mapping.pretext"
 
 rule library_complexity:
     input: f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
@@ -74,7 +76,7 @@ rule library_complexity:
     params:
         source = config["source"]["omni-c"]
     resources:
-        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
+        mem_mb = HPC_CONFIG.get_memory("sort_bam")
     shell:
         "(set +u"
         + " && source {params.source}"
@@ -90,13 +92,34 @@ rule get_stats:
     params:
         source = config["source"]["omni-c"]
     resources:
-        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
+        mem_mb = HPC_CONFIG.get_memory("sort_bam")
     shell:
         "(set +u" 
         + " && source {params.source}"
         + " && get_qc.py -p {input} > {output}"
         + " ) > {log} 2>&1"
 
+rule uniquemapping_pretext:
+    input:
+        f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
+    output: 
+        f"{OUTPUT}/workflow/pretext/{ORGANISM}_unique_mapping.pretext"
+    params: 
+        source = config["source"]["omni-c"],
+        source_2 = config["source"]["uniquemapping_pretext"]
+    threads:
+        int(HPC_CONFIG.get_cores("uniquemapping_pretext"))
+    log:
+        os.path.join(logs, "uniquemapping_pretext.log")
+    resources:
+        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
+    shell:
+        
+        "(set +u" 
+        + " && source {params.source}" 
+        + " && source {params.source_2}"
+        + " && samtool view -h {input} | PretextMap -o {output}"
+        + " ) > {log} 2>&1"
 
 rule sort_bam:
     input: f"{OUTPUT}/workflow/pairtools/{ORGANISM}.bam"
@@ -110,11 +133,12 @@ rule sort_bam:
     params:
         source = config["source"]["omni-c"]
     resources:
-        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
+        mem_mb = HPC_CONFIG.get_memory("sort_bam")
     shell:
         "(set +u"
         + " && source {params.source}"
-        + " && samtools sort -m 4G -@ {threads} -o {output.sort} {input}"
+        + f" && samtools sort -m 4G -@ {{threads}} -T {OUTPUT}/workflow/tmp.bam"
+        + "-o {output.sort} {input}"
         + " && samtools index {output.sort}"
         + " ) > {log} 2>&1"
 
@@ -130,7 +154,7 @@ rule unsorted_bam:
     params:
         source = config["source"]["omni-c"]
     resources:
-        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
+        mem_mb = HPC_CONFIG.get_memory("unsorted_bam")
     shell:
         "(set +u"
         + " && source {params.source}" 
@@ -158,8 +182,10 @@ rule pairtools_dedup:
     
 
 rule pairtools_sort:
-    input:f"{OUTPUT}/workflow/pairtools/parsed_pairbam"
-    output:f"{OUTPUT}/workflow/pairtools/sorted.pairbam"
+    input:
+        f"{OUTPUT}/workflow/pairtools/unique.pairs.gz"
+    output:
+        f"{OUTPUT}/workflow/pairtools/sorted.pairbam"
     params:
         source = config["source"]["omni-c"]
     threads:
@@ -174,28 +200,131 @@ rule pairtools_sort:
         + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp {{input}} > {{output}}"
         + " ) > {log} 2>&1"
     
+rule cooler_unique:
+    input:
+        pairs = f"{OUTPUT}/workflow/pairtools/unique.pairs.gz",
+        genome = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
+    output:
+        cool = temp(f"{OUTPUT}/workflow/cooler/unique_1kb.cool"),
+        mcool = f"{OUTPUT}/workflow/cooler/unique_1kb.mcool"
+    threads:
+        HPC_CONFIG.get_cores("cooler_unique")
+    log:
+        os.path.join(logs, "cooler_unique.log")
+    resources:
+        mem_mb = HPC_CONFIG.get_memory("cooler_unique")
+    params: 
+        source = config["source"]["cooler"],
+    shell:
+        "(set +u" 
+        + " && source {params.source}" 
+        + f" && cooler cload pairix --assembly {ORGANISM}"
+        + " -p {threads} {input.genome}:1000 {input.pairs} {output.cool}"
+        + f" && cooler zoomify --balance -r 1000N -p {{threads}} {OUTPUT}/workflow/cooler/unique_1kb.cool"
+        + " ) > {log} 2>&1"
+        
+
+rule cooler_all:
+    input:
+        pairs = f"{OUTPUT}/workflow/pairtools/all.pairs.gz",
+        genome = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
+    output:
+        cool = temp(f"{OUTPUT}/workflow/cooler/all_1kb.cool"),
+        mcool = f"{OUTPUT}/workflow/cooler/all_1kb.mcool"
+    threads:
+        HPC_CONFIG.get_cores("cooler_all")
+    log:
+        os.path.join(logs, "unique_ucooler_allnique.log")
+    resources:
+        mem_mb = HPC_CONFIG.get_memory("cooler_all")
+    params: 
+        source = config["source"]["cooler"],
+    shell:
+        "(set +u" 
+        + " && source {params.source}"
+        + f" && cooler cload pairix --assembly {ORGANISM}"
+        + " -p {threads} {input.genome}:1000 {input.pairs} {output.cool}" 
+        + f" && cooler zoomify --balance -r 1000N -p {{threads}} {OUTPUT}/workflow/cooler/all_1kb.cool"
+        + " ) > {log} 2>&1"
+        
+
 
 rule unique_unique:
     input: 
         align = f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
         reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta"
     output: 
-        unique = temp(f"{OUTPUT}/workflow/pairtools/parsed_pairbam"),
-        stats = f"{OUTPUT}/workflow/pairtools/parsed_pairbam.stats"
+        unique = temp(f"{OUTPUT}/workflow/pairtools/unique.pairs.gz"),
+        stats = f"{OUTPUT}/workflow/pairtools/unique.pairs.stats"
     threads:
         HPC_CONFIG.get_cores("unique_unique")
     log:
         os.path.join(logs, "unique_unique.log")
     resources:
         mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
-    params: source = config["source"]["omni-c"]
+    params: 
+        source = config["source"]["omni-c"],
+        source2 = config["source"]["cooler"]
     shell:
         "(set +u" 
         + " && source {params.source}" 
+        + " && source {params.source2}"
         + " &&  pairtools parse --min-mapq 40 --walks-policy 5unique" 
         + " --max-inter-align-gap 30 -o {output.unique}"
         + " --output-stats {output.stats}"
         + " --nproc-in {threads} --chroms-path {input.reference} {input.align}"
+        + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/unique.pairs.gz" 
+        + " ) > {log} 2>&1"
+
+
+
+rule multimapping_pairtools:
+    input: 
+        align = f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
+        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta"
+    output: 
+        unique = temp(f"{OUTPUT}/workflow/pairtools/all.pairs.gz"),
+        stats = f"{OUTPUT}/workflow/pairtools/all.pairs.stats"
+    threads:
+        HPC_CONFIG.get_cores("multimapping_pairtools")
+    log:
+        os.path.join(logs, "multimapping_pairtools.log")
+    resources:
+        mem_mb = HPC_CONFIG.get_memory("multimapping_pairtools")
+    params: 
+        source = config["source"]["omni-c"],
+        source2 = config["source"]["cooler"]
+    shell:
+        "(set +u" 
+        + " && source {params.source}" 
+        + " && source {params.source2}"
+        + " &&  pairtools parse --min-mapq 0 --walks-policy all" 
+        + " --max-inter-align-gap 30 -o {output.unique}"
+        + " --output-stats {output.stats}"
+        + " --nproc-in {threads} --chroms-path {input.reference} {input.align}"
+        + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/all.pairs.gz"
+        + " ) > {log} 2>&1"
+
+
+rule multimapping_pretext:
+    input:
+        f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam"
+    output: 
+        f"{OUTPUT}/workflow/pretext/{ORGANISM}_multi_mapping.pretext"
+    params: 
+        source = config["source"]["omni-c"],
+        source_2 = config["source"]["pretext"],
+    threads:
+        int(HPC_CONFIG.get_cores("multimapping_pretext"))
+    log:
+        os.path.join(logs, "multimapping_pretext.log")
+    resources:
+        mem_mb = HPC_CONFIG.get_memory("multimapping_pretext")
+    shell:
+        "(set +u" 
+        + " && source {params.source}"
+        + " && source {params.source_2}"
+        + " && samtool view -h {input} | PretextMap -o {output}"
         + " ) > {log} 2>&1"
 
 
