@@ -34,6 +34,7 @@ R2 = config["input_samples"]["R2"]
 REFERENCE = config["input_samples"]["reference"]
 ORGANISM = config["input_samples"]["organism"]
 OUTPUT = config["output"]
+LONG_READS = config["input_samples"]["long_reads"]
 logs = config["logs"]
 
 if config['bwa-mem2'] == 'True':
@@ -62,42 +63,117 @@ shell.prefix("set -eo pipefail; ")
 
 rule all:
     input: 
-        f"{OUTPUT}/results/{ORGANISM}_hi-c_library_complexity.txt", 
-        f"{OUTPUT}/results/{ORGANISM}_stats_library.txt", 
         f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam",
         f"{OUTPUT}/workflow/pretext/{ORGANISM}_unique_mapping.pretext",
-        f"{OUTPUT}/workflow/pretext/{ORGANISM}_multi_mapping.pretext"
+        f"{OUTPUT}/workflow/pretext/{ORGANISM}_multi_mapping.pretext",
+        f"{OUTPUT}/workflow/cooler/unique_1kb.mcool",
+        f"{OUTPUT}/workflow/cooler/all_1kb.mcool",
+        f"{OUTPUT}/workflow/tracks/gaps_{ORGANISM}.bedgraph",
+        f"{OUTPUT}/workflow/tracks/telomeres_{ORGANISM}.bedgraph"
 
-rule library_complexity:
-    input: f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
-    output: f"{OUTPUT}/results/{ORGANISM}_hi-c_library_complexity.txt"
+rule get_coverage:
+    input:
+        f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
+    output:
+    shell: 
+
+rule merge_bam:
+    input:
+        expand(f"{OUTPUT}/workflow/samtools/{long_reads}.sort.bam", long_reads = LONG_READS)
+    output:
+        f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
     log:
-        os.path.join(logs, "library_complexity.log")
+        os.path.join(logs, "merge_bam.log")
     params:
         source = config["source"]["omni-c"]
+    threads:
+        int(HPC_CONFIG.get_cores("merge_bam"))
     resources:
-        mem_mb = HPC_CONFIG.get_memory("sort_bam")
-    shell:
-        "(set +u"
-        + " && source {params.source}"
-        + " && preseq lc_extrap -bam -pe -extrap 2.1e9 -step 1e8" 
-        + " -seg_len 1000000000 -output {output} {input}"
-        + " ) > {log} 2>&1"
-
-rule get_stats:
-    input: f"{OUTPUT}/workflow/pairtools/stats.txt"
-    output: f"{OUTPUT}/results/{ORGANISM}_stats_library.txt"
-    log:
-        os.path.join(logs, "get_stats.log")
-    params:
-        source = config["source"]["omni-c"]
-    resources:
-        mem_mb = HPC_CONFIG.get_memory("sort_bam")
+        mem_mb = HPC_CONFIG.get_memory("merge_bam")
     shell:
         "(set +u" 
         + " && source {params.source}"
-        + " && get_qc.py -p {input} > {output}"
+        + " && samtools merge -@ {threads} {output} {input}"
         + " ) > {log} 2>&1"
+
+rule minimap2:
+    input:
+        reads = f"{OUTPUT}/reads/{{long_reads}}",
+        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
+    output:
+         f"{OUTPUT}/workflow/samtools/{LONG_READS}.sort.bam"
+    log:
+        os.path.join(logs, "minimap2.log")
+    params:
+        source = config["source"]["minimap2"],
+        source2 = config["source"]["omni-c"],
+    threads:
+        int(HPC_CONFIG.get_cores("minimap2"))
+    resources:
+        mem_mb = HPC_CONFIG.get_memory("minimap2")
+    shell:
+        "(set +u" 
+        + " && source {params.source}"
+        + " && source {params.source_2}"
+        + " && minimap2 -t {threads} -ax map-hifi {input.reference} {input.reads} > " 
+        + " | samtools view -@ {threads} -bS - | samtools sort -@ {threads} -m 4G > "
+        + " {output}"
+        + " ) > {log} 2>&1"
+
+rule telomeres_reformatting:
+    input:
+        f"{OUTPUT}/workflow/telomeres/{ORGANISM}_telomeric_repeat_windows.tsv"
+    output:
+        f"{OUTPUT}/workflow/tracks/telomeres_{ORGANISM}.bedgraph"
+       shell:""" 
+        awk "\$6=\$2-10000  {{print \$1,\$6,\$2,\$3}} " | sed "s/\ /\\t/g" > {output}
+        """
+
+rule telomeres:
+    input:
+        fasta = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
+        dir = f"{OUTPUT}/workflow/telomeres",
+    output:
+        f"{OUTPUT}/workflow/telomeres/{ORGANISM}"
+    log:
+        os.path.join(logs, "scaffold_yahs.log")
+    params:
+        source = config["source"]["tidk"],
+        prefix = f"{OUTPUT}/workflow/telomeres/{ORGANISM}"
+    shell:
+        "(set +u" 
+        + " && source {params.source}"
+        + " && tidk search --extension tsv -s {params.sequence} -o {output} "
+        + " --dir {input.dir} {input.fasta} "
+        + " -o {output} {input.fasta} {input.bam}"
+        + f" && sed  -i 1d {OUTPUT}/workflow/telomeres/{ORGANISM}_telomeric_repeat_windows.tsv"
+        + " ) > {log} 2>&1"
+
+
+rule gaps_reformatting:
+    input:
+        f"{OUTPUT}/workflow/tracks/gaps.bed3"
+    output:
+        f"{OUTPUT}/workflow/tracks/gaps_{ORGANISM}.bedgraph"
+    shell: """ 
+        awk ' \$4=\$3-\$2 {{ print \$0}} {input} > {output} 
+        """
+
+rule gaps:
+    input:
+        fasta = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
+    output:
+        temp(f"{OUTPUT}/workflow/tracks/gaps.bed3")
+    log:
+        os.path.join(logs, "gaps.log")
+    params:
+        source = config["source"]["seqtk"]
+    shell:
+        "(set +u" 
+        + " && source {params.source}"
+        + " && seqtk cutN -g -n 10 {input.fasta} > gaps.bed3 "
+        + " ) > {log} 2>&1"
+
 
 rule uniquemapping_pretext:
     input:
@@ -409,3 +485,4 @@ rule index_reference:
         + " && source {params.source}" 
         + " && samtools faidx {input} "
         + ") > {log} 2>&1"
+

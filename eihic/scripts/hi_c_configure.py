@@ -44,6 +44,7 @@ class HI_CCONFIGURE:
         self.args.output = str(Path(self.args.output).resolve())
         self.args.logs = str(Path(self.args.output).resolve() / "logs")
         self.run_config_file = str()
+        self.args.curation = bool(self.args.curation)
         self.args.bwa_mem2 = bool(self.args.bwa_mem2)
 
     def process_run_config(self):
@@ -76,6 +77,14 @@ class HI_CCONFIGURE:
         data["R2"] = file[1]
         data["reference"] = file[2][0]
         data["organism"] = file[3][0]
+        
+        if self.args.curation:
+            data["long_reads"] = file[4][0]
+            if len(file) != 5:
+                print("Error: Your data sample_csv file does not have the right amount of fields. Please check the documentation and your file.")
+                print(data)
+                exit() 
+        
 
         # add details
         for sample in data["R1"]:
@@ -97,8 +106,8 @@ class HI_CCONFIGURE:
 
         # r1_cmd = f"cd {read_dir} && ln -s {R1[sample]} x[SID].R1.{ext}"
         for sample in range(len(data["R1"])):
-            r1_name = data["R1"][sample]
-            r2_name = data["R2"][sample]
+            r1_name = os.path.basename(os.path.abspath(data["R1"][sample]))
+            r2_name = os.path.basename(os.path.abspath(data["R2"][sample]))
             r1_path = Path(read_dir).joinpath(r1_name)
             r2_path = Path(read_dir).joinpath(r2_name)
 
@@ -113,6 +122,15 @@ class HI_CCONFIGURE:
             Path(r1_path).symlink_to(os.path.abspath(data["R1"][sample]))
             Path(r2_path).symlink_to(os.path.abspath(data["R2"][sample]))
         
+        for sample in data["long_reads"]:
+            sample_name = os.path.basename(os.path.abspath(sample))
+            sample_path = Path(read_dir).joinpath(sample_name)
+            
+            if self.args.force_reconfiguration:
+                if Path(sample_path).is_symlink():
+                    print(f"Unlinking '{sample_path}' with --force")
+                    sample_path.unlink()
+
         self.run_config["input_samples"] = data
 
         #Create reference dir
@@ -166,6 +184,13 @@ def main():
     parser.add_argument(
         "--samples_csv",
         help=f"Provide sample information in csv format. Please refer to the sample file is here: {DEFAULT_CONFIG_FILE}, for more information above the tsv format. A template is provided here {DEFAULT_SAMPLE_CSV_FILE}.  (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-c",
+        "--curation",
+        action="store_true",
+        default=False,
+        help="Use this flag if you have your final scaffold and want to run the curation pipeline. Bare in mind that the sample_csv file requires an extra field with the long reads file paths as a fifth line. (default: %(default)s)"
     )
     parser.add_argument(
         "--jira",
