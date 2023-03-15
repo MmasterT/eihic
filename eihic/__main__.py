@@ -128,14 +128,14 @@ class HI_C:
             )
         elif self.library == "omni-c" and self.curation:
             cmd = (
-                f"snakemake --snakefile {script_dir}/omni-c.smk"
+                f"snakemake --snakefile {script_dir}/curation_omni-c.smk"
                 f" --configfile {self.run_config} --latency-wait {self.latency_wait} --jobs {self.jobs} --nolock --cluster-config {self.hpc_config}"
                 f" --config notify={self.no_posting} verbose={self.verbose}"
                 f" --drmaa ' -C AVX-512 -p {{cluster.partition}} -c {{cluster.cores}} --mem={{cluster.memory}} -J {{cluster.name}} -o {self.logs}/{{rule}}.%N.%j.cluster.log' --printshellcmds --reason "
             )
         elif self.library == "omni-c":
             cmd = (
-                f"snakemake --snakefile {script_dir}/curation_omni-c.smk"
+                f"snakemake --snakefile {script_dir}/omni-c.smk"
                 f" --configfile {self.run_config} --latency-wait {self.latency_wait} --jobs {self.jobs} --nolock --cluster-config {self.hpc_config}"
                 f" --config notify={self.no_posting} verbose={self.verbose}"
                 f" --drmaa ' -C AVX-512 -p {{cluster.partition}} -c {{cluster.cores}} --mem={{cluster.memory}} -J {{cluster.name}} -o {self.logs}/{{rule}}.%N.%j.cluster.log' --printshellcmds --reason "
