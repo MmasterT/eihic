@@ -231,7 +231,7 @@ rule uniquemapping_pretext:
         "(set +u" 
         + " && source {params.source}" 
         + " && source {params.source_2}"
-        + " && samtool view -h {input} | PretextMap -o {output}"
+        + " && samtools view -h {input} | PretextMap -o {output}"
         + " ) > {log} 2>&1"
 
 rule sort_bam:
@@ -437,7 +437,7 @@ rule multimapping_pretext:
         "(set +u" 
         + " && source {params.source}"
         + " && source {params.source_2}"
-        + " && samtool view -h {input} | PretextMap -o {output}"
+        + " && samtools view -h {input} | PretextMap -o {output}"
         + " ) > {log} 2>&1"
 
 
