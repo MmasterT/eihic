@@ -83,6 +83,7 @@ class HI_C:
         self.verbose = args.verbose
         self.dry_run = args.dry_run
         self.library = args.library
+        self.curation = args.curation
         self.loaded_run_config = yaml.load(
             open(self.run_config), Loader=yaml.SafeLoader
         )
@@ -125,6 +126,13 @@ class HI_C:
                 f" --config notify={self.no_posting} verbose={self.verbose}"
                 f" --drmaa ' -C AVX-512 -p {{cluster.partition}} -c {{cluster.cores}} --mem={{cluster.memory}} -J {{cluster.name}} -o {self.logs}/{{rule}}.%N.%j.cluster.log' --printshellcmds --reason "
             )
+        elif self.library == "omni-c" and self.curation:
+            cmd = (
+                f"snakemake --snakefile {script_dir}/omni-c.smk"
+                f" --configfile {self.run_config} --latency-wait {self.latency_wait} --jobs {self.jobs} --nolock --cluster-config {self.hpc_config}"
+                f" --config notify={self.no_posting} verbose={self.verbose}"
+                f" --drmaa ' -C AVX-512 -p {{cluster.partition}} -c {{cluster.cores}} --mem={{cluster.memory}} -J {{cluster.name}} -o {self.logs}/{{rule}}.%N.%j.cluster.log' --printshellcmds --reason "
+            )
         elif self.library == "omni-c":
             cmd = (
                 f"snakemake --snakefile {script_dir}/omni-c.smk"
@@ -160,8 +168,15 @@ def main():
     # configure
     parser_configure = subparsers.add_parser("configure", help="see `configure -h`")
     parser_configure.add_argument(
-        "--samples_csv",
+        "-s",
+	"--samples_csv",
         help=f"Provide sample information in tab-separated format. Please refer to the sample file: {DEFAULT_CONFIG_FILE} for more information above the csv format. A template is provided here {DEFAULT_SAMPLE_CSV_FILE}.  (default: %(default)s)",
+    )
+    parser_configure.add_argument(
+        "-c",
+        "--curation",
+        action="store_true",
+        help="Use this flag if you have your final scaffold and want to run the curation pipeline. Bare in mind that the sample_csv file requires an extra field with the long reads file paths as a fifth line. (default: %(default)s)"
     )
     parser_configure.add_argument(
         "--jira",
@@ -197,6 +212,12 @@ def main():
         "--library",
         default="omni-c",
         help="This pipeline supports the following library protocols for hi-c data: arima (2 enzymes protocol), and  omni-c. Provide the name (arima or omni-c) as the second positional argument after the sample file (default: %(default)s)",
+    )
+    parser_run.add_argument(
+        "-c",
+        "--curation",
+        action="store_true",
+        help="This flag run the steps generate all the required Hi-C contact matrices and tracks for its manual curation step. (default: %(default)s)"
     )
     parser_run.add_argument(
         "--hpc_config",
