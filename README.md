@@ -12,7 +12,7 @@ conda create snakemake python=3.8 snakemake=7.12.1
 conda activate snakemake #If it is your first time go to the conda documentation at the end of the repository. 
 
 git clone https://github.com/EI-CoreBioinformatics/eihic.git
-cd eihic/eihic
+cd eihic
 
 #For ease of installation follow these steps
 
@@ -82,7 +82,7 @@ usage: EI HI-C run [-h] [--library LIBRARY] [--hpc_config HPC_CONFIG] [--jobs JO
                    run_config
 
 positional arguments:
-  run_config            Provide run configuration YAML. Run 'eigatk configure -h' to generate the run configuration
+  run_config            Provide run configuration YAML. Run 'eihic configure -h' to generate the run configuration
                         YAML file. (Description template file is here:
                         /ei/software/cb/eihic/0.1.0/x86_64/lib/python3.9/site-packages/eihic/etc/run_config.yaml)
 
@@ -114,6 +114,7 @@ This file is composed of four lines:
 2. all R2 reads
 3. Path to the reference assembly.
 4. organism name (will be used for file naming)
+5. (if running curation mode) list of hifi_reads in fasta/fasta.gz
 
 Example:
 
@@ -124,6 +125,8 @@ sample_1_R2.fastq,sample_2_R2.fastq,(...), sample_n_R2.fastq
 reference/genome/you_reference_genome.fasta #path to reference
 
 name_of_organism (internal naming usage)
+
+hifi_1.fasta,hifi_2.fasta,(...),hifi_n.fasta
 
 ### Conda
 

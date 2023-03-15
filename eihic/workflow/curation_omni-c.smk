@@ -64,18 +64,55 @@ shell.prefix("set -eo pipefail; ")
 rule all:
     input: 
         f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam",
+        f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
         f"{OUTPUT}/workflow/pretext/{ORGANISM}_unique_mapping.pretext",
         f"{OUTPUT}/workflow/pretext/{ORGANISM}_multi_mapping.pretext",
         f"{OUTPUT}/workflow/cooler/unique_1kb.mcool",
         f"{OUTPUT}/workflow/cooler/all_1kb.mcool",
         f"{OUTPUT}/workflow/tracks/gaps_{ORGANISM}.bedgraph",
-        f"{OUTPUT}/workflow/tracks/telomeres_{ORGANISM}.bedgraph"
+        f"{OUTPUT}/workflow/tracks/telomeres_{ORGANISM}.bedgraph",
+        f"{OUTPUT}/workflow/tracks/coverage_{ORGANISM}.bedgraph"
 
-rule get_coverage:
+
+rule mosdepth_coverage:
     input:
         f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
     output:
-    shell: 
+        f"{OUTPUT}/workflow/tracks/{ORGANISM}.mosdepth.summary.txt",
+        bedgz = temp(f"{OUTPUT}/workflow/tracks/{ORGANISM}.per-base.bed.gz"),
+        bedgraph = f"{OUTPUT}/workflow/tracks/coverage_{ORGANISM}.bedgraph"
+    params:
+        source = config["source"]["mosdepth"]
+    log:
+        os.path.join(logs, "mosdepth_coverage.log")
+    threads:
+        int(HPC_CONFIG.get_cores("mosdepth_coverage"))
+    resources:
+        mem_mb = HPC_CONFIG.get_memory("mosdepth_coverage")
+    shell:
+        "(set + u"
+        + " && source {params.source}"
+        + f" cd {OUTPUT}/workflow/tracks"
+        + f" mosdepth -t {{threads}} -b 10000 -x  -m {ORGANISM} {{input}}"
+        + " && zcat {output.bedgz} > {output.bedgraph}"
+        + " ) > {log} 2>&1"
+
+rule index_bam:
+    input:
+        f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
+    output:
+        f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam.bai"
+    params:
+        source = config["source"]["omni-c"]
+    threads:
+        int(HPC_CONFIG.get_cores("index_bam"))
+    resources:
+        mem_mb = HPC_CONFIG.get_memory("index_bam")
+    shell:
+        "(set +u" 
+        + " && source {params.source}"
+        + " && samtools index -@ {threads} {input}"
+        + " ) > {log} 2>&1"
 
 rule merge_bam:
     input:

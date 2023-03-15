@@ -76,5 +76,13 @@
     "cooler_all": {
         "memory": 100000,
         "cores": 12
+    },
+    "mosdepth_coverage":{
+        "memory": 80000,
+        "cores": 12
+    },
+    "index_bam":{
+        "memory": 30000,
+        "cores": 8
     }
 }
