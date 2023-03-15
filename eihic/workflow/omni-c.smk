@@ -28,10 +28,21 @@ NOTIFY = not config["notify"] # command line
 if not Path(config["jira"]["password_file"]).is_file() or not jira_id:
     NOTIFY = False
 
+def list_basenames(paths):
+    if paths is str:
+        return os.path.basename(paths)
+    
+    basenames = []
+    for path in paths:
+        path = os.path.basename(path)
+        basenames.append(path)
+    return basenames
+
+
 # Save the data to a list: R1 forward reads, R2 reverse reads, and sample name/ organism name
-R1 = config["input_samples"]["R1"]
-R2 = config["input_samples"]["R2"]
-REFERENCE = config["input_samples"]["reference"]
+R1 = list_basenames(config["input_samples"]["R1"])
+R2 = list_basenames(config["input_samples"]["R2"])
+REFERENCE = list_basenames(config["input_samples"]["reference"])
 ORGANISM = config["input_samples"]["organism"]
 OUTPUT = config["output"]
 logs = config["logs"]
