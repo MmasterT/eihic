@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 EI Hi-C Pipeline
@@ -111,6 +110,8 @@ class HI_C:
         cmd = None
         if self.dry_run:
             print("Enabling dry run..")
+            if self.curation:
+                self.library = "curation_" + self.library
             cmd = (
                 f"snakemake --snakefile {script_dir}/{self.library}.smk"
                 f" --configfile {self.run_config} --latency-wait {self.latency_wait} --jobs {self.jobs} --cluster-config {self.hpc_config}"
@@ -126,14 +127,14 @@ class HI_C:
                 f" --config notify={self.no_posting} verbose={self.verbose}"
                 f" --drmaa ' -C AVX-512 -p {{cluster.partition}} -c {{cluster.cores}} --mem={{cluster.memory}} -J {{cluster.name}} -o {self.logs}/{{rule}}.%N.%j.cluster.log' --printshellcmds --reason "
             )
-        elif self.library == "omni-c" and self.curation:
+        elif self.library == "omni-c" and self.curation == True:
             cmd = (
                 f"snakemake --snakefile {script_dir}/curation_omni-c.smk"
                 f" --configfile {self.run_config} --latency-wait {self.latency_wait} --jobs {self.jobs} --nolock --cluster-config {self.hpc_config}"
                 f" --config notify={self.no_posting} verbose={self.verbose}"
                 f" --drmaa ' -C AVX-512 -p {{cluster.partition}} -c {{cluster.cores}} --mem={{cluster.memory}} -J {{cluster.name}} -o {self.logs}/{{rule}}.%N.%j.cluster.log' --printshellcmds --reason "
             )
-        elif self.library == "omni-c":
+        elif self.library == "omni-c" and self.curation == False:
             cmd = (
                 f"snakemake --snakefile {script_dir}/omni-c.smk"
                 f" --configfile {self.run_config} --latency-wait {self.latency_wait} --jobs {self.jobs} --nolock --cluster-config {self.hpc_config}"
@@ -217,7 +218,7 @@ def main():
         "-c",
         "--curation",
         action="store_true",
-        help="This flag run the steps generate all the required Hi-C contact matrices and tracks for its manual curation step. (default: %(default)s)"
+        help="This flag run the steps generate all the required Hi-C contact matrices and tracks for its manual curation step. (default: %(default)s)",
     )
     parser_run.add_argument(
         "--hpc_config",
