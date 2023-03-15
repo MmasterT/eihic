@@ -29,12 +29,12 @@ if not Path(config["jira"]["password_file"]).is_file() or not jira_id:
     NOTIFY = False
 
 # Save the data to a list: R1 forward reads, R2 reverse reads, and sample name/ organism name
-R1 = config["input_samples"]["R1"]
-R2 = config["input_samples"]["R2"]
-REFERENCE = config["input_samples"]["reference"]
+R1 = os.path.basename(config["input_samples"]["R1"])
+R2 = os.path.basename(config["input_samples"]["R2"])
+REFERENCE = os.path.basename(config["input_samples"]["reference"])
 ORGANISM = config["input_samples"]["organism"]
 OUTPUT = config["output"]
-LONG_READS = config["input_samples"]["long_reads"]
+LONG_READS = os.path.basename(config["input_samples"]["long_reads"])
 logs = config["logs"]
 
 if config['bwa-mem2'] == 'True':
