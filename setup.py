@@ -7,7 +7,7 @@ requirements = [line.rstrip() for line in open("requirements.txt", "rt")]
 
 setup(
     name="eihic",
-    version="0.1.0",
+    version="0.2.0",
     description=" EI Hi-C QC pipeline",
     author="Mariano Olivera Fedi",
     author_email="Mariano.olivera-fedi@aerlham.ac.uk, mariano.olivera.fedi@hotmail.com",
