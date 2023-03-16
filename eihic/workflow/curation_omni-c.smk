@@ -162,7 +162,7 @@ rule telomeres_reformatting:
         f"{OUTPUT}/workflow/telomeres/{ORGANISM}_telomeric_repeat_windows.tsv"
     output:
         f"{OUTPUT}/workflow/tracks/telomeres_{ORGANISM}.bedgraph"
-       shell:""" 
+    shell:""" 
         awk "\$6=\$2-10000  {{print \$1,\$6,\$2,\$3}} " | sed "s/\ /\\t/g" > {output}
         """
 
