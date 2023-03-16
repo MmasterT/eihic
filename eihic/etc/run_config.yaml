@@ -42,7 +42,8 @@ source:
   cooler: " cooler-0.9.1_CBG "
   pretext: " pretext-0.1.0_CBG  "
   minimap2: " minimap2-2.22_CBG  "
-  mosdepth: " mosdepth-0.3.3_CBG"
+  mosdepth: " mosdepth-0.3.3_CBG "
+  tidk: " tidk-0.2.31_CBG "
 
 # 1 means true for the parameter and 0 means false. 
 # For formatting options refer to the HiCUP documention

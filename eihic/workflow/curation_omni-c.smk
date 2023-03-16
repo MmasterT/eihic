@@ -28,6 +28,17 @@ NOTIFY = not config["notify"] # command line
 if not Path(config["jira"]["password_file"]).is_file() or not jira_id:
     NOTIFY = False
 
+
+def list_basenames(paths):
+    if paths is str:
+        return os.path.basename(paths)
+    
+    basenames = []
+    for path in paths:
+        path = os.path.basename(path)
+        basenames.append(path)
+    return basenames
+
 # Save the data to a list: R1 forward reads, R2 reverse reads, and sample name/ organism name
 R1 = list_basenames(config["input_samples"]["R1"])
 R2 = list_basenames(config["input_samples"]["R2"])
@@ -116,7 +127,7 @@ rule index_bam:
 
 rule merge_bam:
     input:
-        expand(f"{OUTPUT}/workflow/samtools/{long_reads}.sort.bam", long_reads = LONG_READS)
+        expand(f"{OUTPUT}/workflow/samtools/{{long_reads}}.sort.bam", long_reads = LONG_READS)
     output:
         f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
     log:
@@ -135,15 +146,15 @@ rule merge_bam:
 
 rule minimap2:
     input:
-        reads = f"{OUTPUT}/reads/{{long_reads}}",
+        reads = expand(f"{OUTPUT}/reads/{{long_reads}}", long_reads=LONG_READS),
         reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
     output:
-         f"{OUTPUT}/workflow/samtools/{LONG_READS}.sort.bam"
+        expand(f"{OUTPUT}/workflow/samtools/{{long_reads}}.sort.bam", long_reads=LONG_READS),
     log:
         os.path.join(logs, "minimap2.log")
     params:
         source = config["source"]["minimap2"],
-        source2 = config["source"]["omni-c"],
+        source_2 = config["source"]["omni-c"],
     threads:
         int(HPC_CONFIG.get_cores("minimap2"))
     resources:
@@ -169,21 +180,21 @@ rule telomeres_reformatting:
 rule telomeres:
     input:
         fasta = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
-        dir = f"{OUTPUT}/workflow/telomeres",
     output:
-        f"{OUTPUT}/workflow/telomeres/{ORGANISM}"
+        f"{OUTPUT}/workflow/telomeres/{ORGANISM}_telomeric_repeat_windows.tsv"
     log:
-        os.path.join(logs, "scaffold_yahs.log")
+        os.path.join(logs, "telomeres.log")
     params:
         source = config["source"]["tidk"],
-        prefix = f"{OUTPUT}/workflow/telomeres/{ORGANISM}"
+        prefix = f"{OUTPUT}/workflow/telomeres/{ORGANISM}",
+        #sequence = config["input_samples"]["telomeres"],
+        dir = f"{OUTPUT}/workflow/telomeres"
     shell:
         "(set +u" 
         + " && source {params.source}"
-        + " && tidk search --extension tsv -s {params.sequence} -o {output} "
-        + " --dir {input.dir} {input.fasta} "
-        + " -o {output} {input.fasta} {input.bam}"
-        + f" && sed  -i 1d {OUTPUT}/workflow/telomeres/{ORGANISM}_telomeric_repeat_windows.tsv"
+        + " && tidk search --extension tsv -s TTAGGG -o {params.prefix} "
+        + " --dir {params.dir} -o {output} {input.fasta}"
+        + " && sed  -i 1d {output} " 
         + " ) > {log} 2>&1"
 
 
@@ -219,7 +230,7 @@ rule uniquemapping_pretext:
         f"{OUTPUT}/workflow/pretext/{ORGANISM}_unique_mapping.pretext"
     params: 
         source = config["source"]["omni-c"],
-        source_2 = config["source"]["uniquemapping_pretext"]
+        source_2 = config["source"]["pretext"]
     threads:
         int(HPC_CONFIG.get_cores("uniquemapping_pretext"))
     log:
@@ -227,7 +238,6 @@ rule uniquemapping_pretext:
     resources:
         mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
     shell:
-        
         "(set +u" 
         + " && source {params.source}" 
         + " && source {params.source_2}"
