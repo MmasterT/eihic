@@ -24,9 +24,9 @@ min_version("7.10")
 
 # Declare variables
 jira_id = config["jira"]["jira_id"] # command line
-NOTIFY = not config["notify"] # command line
-if not Path(config["jira"]["password_file"]).is_file() or not jira_id:
-    NOTIFY = False
+#NOTIFY = not config["notify"] # command line
+#if not Path(config["jira"]["password_file"]).is_file() or not jira_id:
+#    NOTIFY = False
 
 
 def list_basenames(paths):
@@ -103,8 +103,8 @@ rule mosdepth_coverage:
     shell:
         "(set + u"
         + " && source {params.source}"
-        + f" cd {OUTPUT}/workflow/tracks"
-        + f" mosdepth -t {{threads}} -b 10000 -x  -m {ORGANISM} {{input}}"
+        + f" && cd {OUTPUT}/workflow/tracks"
+        + f" && mosdepth -t {{threads}} -b 10000 -x  -m {ORGANISM} {{input}}"
         + " && zcat {output.bedgz} > {output.bedgraph}"
         + " ) > {log} 2>&1"
 
@@ -163,7 +163,7 @@ rule minimap2:
         "(set +u" 
         + " && source {params.source}"
         + " && source {params.source_2}"
-        + " && minimap2 -t {threads} -ax map-hifi {input.reference} {input.reads} > " 
+        + " && minimap2 -t {threads} -ax map-hifi {input.reference} {input.reads} " 
         + " | samtools view -@ {threads} -bS - | samtools sort -@ {threads} -m 4G > "
         + " {output}"
         + " ) > {log} 2>&1"
@@ -174,7 +174,7 @@ rule telomeres_reformatting:
     output:
         f"{OUTPUT}/workflow/tracks/telomeres_{ORGANISM}.bedgraph"
     shell:""" 
-        awk "\$6=\$2-10000  {{print \$1,\$6,\$2,\$3}} " | sed "s/\ /\\t/g" > {output}
+        awk '$6=$2-10000  {{print $1,$6,$2,$3}}' {input} | sed "s/\ /\\t/g" > {output}
         """
 
 rule telomeres:
@@ -186,14 +186,14 @@ rule telomeres:
         os.path.join(logs, "telomeres.log")
     params:
         source = config["source"]["tidk"],
-        prefix = f"{OUTPUT}/workflow/telomeres/{ORGANISM}",
+        prefix = f"{ORGANISM}",
         #sequence = config["input_samples"]["telomeres"],
         dir = f"{OUTPUT}/workflow/telomeres"
     shell:
         "(set +u" 
         + " && source {params.source}"
         + " && tidk search --extension tsv -s TTAGGG -o {params.prefix} "
-        + " --dir {params.dir} -o {output} {input.fasta}"
+        + " --dir {params.dir}  {input.fasta}"
         + " && sed  -i 1d {output} " 
         + " ) > {log} 2>&1"
 
@@ -219,7 +219,8 @@ rule gaps:
     shell:
         "(set +u" 
         + " && source {params.source}"
-        + " && seqtk cutN -g -n 10 {input.fasta} > gaps.bed3 "
+        + f" && mkdir -p {OUTPUT}/workflow/tracks"
+        + " && seqtk cutN -g -n 10 {input.fasta} > {output} "
         + " ) > {log} 2>&1"
 
 
@@ -241,7 +242,7 @@ rule uniquemapping_pretext:
         "(set +u" 
         + " && source {params.source}" 
         + " && source {params.source_2}"
-        + " && samtools view -h {input} | PretextMap -o {output}"
+        + " && samtools view -h {input} | PretextMap --mapq 0 -o {output}"
         + " ) > {log} 2>&1"
 
 rule sort_bam:
@@ -261,7 +262,7 @@ rule sort_bam:
         "(set +u"
         + " && source {params.source}"
         + f" && samtools sort -m 4G -@ {{threads}} -T {OUTPUT}/workflow/tmp.bam"
-        + "-o {output.sort} {input}"
+        + " -o {output.sort} {input}"
         + " && samtools index {output.sort}"
         + " ) > {log} 2>&1"
 
@@ -375,7 +376,7 @@ rule cooler_all:
 rule unique_unique:
     input: 
         align = f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
-        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta"
+        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output: 
         unique = temp(f"{OUTPUT}/workflow/pairtools/unique.pairs.gz"),
         stats = f"{OUTPUT}/workflow/pairtools/unique.pairs.stats"

@@ -24,9 +24,9 @@ min_version("7.10")
 
 # Declare variables
 jira_id = config["jira"]["jira_id"] # command line
-NOTIFY = not config["notify"] # command line
-if not Path(config["jira"]["password_file"]).is_file() or not jira_id:
-    NOTIFY = False
+#NOTIFY = not config["notify"] # command line
+#if not Path(config["jira"]["password_file"]).is_file() or not jira_id:
+#    NOTIFY = False
 
 def list_basenames(paths):
     if paths is str:
@@ -189,7 +189,7 @@ rule pairtools_sort:
 rule unique_unique:
     input: 
         align = f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
-        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta"
+        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output: 
         unique = temp(f"{OUTPUT}/workflow/pairtools/parsed_pairbam"),
         stats = f"{OUTPUT}/workflow/pairtools/parsed_pairbam.stats"
