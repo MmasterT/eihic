@@ -232,7 +232,7 @@ rule mapping_to_reference:
         "(set +u" 
         + " && source {params.source}" 
         + " && {params.bwa} mem -5SP -T0 -t {threads} {input.reference}" 
-        + " <(zcat {input.R1}) <(zcat {input.R2}) |"
+        + " <(zcat -f {input.R1}) <(zcat -f {input.R2}) |"
         + " samtools view -@ {threads} -bS - |"
         + " samtools sort -m 4G -@ {threads} > {output}"
         + " ) > {log} 2>&1"

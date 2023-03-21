@@ -129,7 +129,8 @@ rule merge_bam:
     input:
         expand(f"{OUTPUT}/workflow/samtools/{{long_reads}}.sort.bam", long_reads = LONG_READS)
     output:
-        f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
+        bam = f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam",
+        index = f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
     log:
         os.path.join(logs, "merge_bam.log")
     params:
@@ -141,7 +142,8 @@ rule merge_bam:
     shell:
         "(set +u" 
         + " && source {params.source}"
-        + " && samtools merge -@ {threads} {output} {input}"
+        + " && samtools merge -@ {threads} {output.bam} {input}"
+        + f" && samtools index -@ {{threads}} {OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
         + " ) > {log} 2>&1"
 
 rule minimap2:
@@ -204,7 +206,7 @@ rule gaps_reformatting:
     output:
         f"{OUTPUT}/workflow/tracks/gaps_{ORGANISM}.bedgraph"
     shell: """ 
-        awk ' \$4=\$3-\$2 {{ print \$0}} {input} > {output} 
+        awk ' $4=$3-$2 {{ print $0}}' {input} > {output} 
         """
 
 rule gaps:
@@ -326,7 +328,7 @@ rule pairtools_sort:
     
 rule cooler_unique:
     input:
-        pairs = f"{OUTPUT}/workflow/pairtools/unique.pairs.gz",
+        pairs = f"{OUTPUT}/workflow/pairtools/unique.sort.pairs.gz",
         genome = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output:
         cool = temp(f"{OUTPUT}/workflow/cooler/unique_1kb.cool"),
@@ -350,7 +352,7 @@ rule cooler_unique:
 
 rule cooler_all:
     input:
-        pairs = f"{OUTPUT}/workflow/pairtools/all.pairs.gz",
+        pairs = f"{OUTPUT}/workflow/pairtools/all.sort.pairs.gz",
         genome = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output:
         cool = temp(f"{OUTPUT}/workflow/cooler/all_1kb.cool"),
@@ -379,6 +381,7 @@ rule unique_unique:
         reference = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output: 
         unique = temp(f"{OUTPUT}/workflow/pairtools/unique.pairs.gz"),
+        sort = f"{OUTPUT}/workflow/pairtools/unique.sort.pairs.gz"
         stats = f"{OUTPUT}/workflow/pairtools/unique.pairs.stats"
     threads:
         HPC_CONFIG.get_cores("unique_unique")
@@ -397,7 +400,9 @@ rule unique_unique:
         + " --max-inter-align-gap 30 -o {output.unique}"
         + " --output-stats {output.stats}"
         + " --nproc-in {threads} --chroms-path {input.reference} {input.align}"
-        + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/unique.pairs.gz" 
+        + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp {{input}} "
+        + " > {output.sort}"
+        + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/unique.sort.pairs.gz" 
         + " ) > {log} 2>&1"
 
 
@@ -405,9 +410,10 @@ rule unique_unique:
 rule multimapping_pairtools:
     input: 
         align = f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
-        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta"
+        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output: 
         unique = temp(f"{OUTPUT}/workflow/pairtools/all.pairs.gz"),
+        sort = f"{OUTPUT}/workflow/pairtools/all.sort.pairs.gz"
         stats = f"{OUTPUT}/workflow/pairtools/all.pairs.stats"
     threads:
         HPC_CONFIG.get_cores("multimapping_pairtools")
@@ -426,7 +432,9 @@ rule multimapping_pairtools:
         + " --max-inter-align-gap 30 -o {output.unique}"
         + " --output-stats {output.stats}"
         + " --nproc-in {threads} --chroms-path {input.reference} {input.align}"
-        + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/all.pairs.gz"
+        + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp {{input}} "
+        + " > {output.sort}"
+        + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/all.sort.pairs.gz"
         + " ) > {log} 2>&1"
 
 
@@ -474,7 +482,7 @@ rule mapping_to_reference:
         "(set +u" 
         + " && source {params.source}" 
         + " && {params.bwa} mem -5SP -T0 -t {threads} {input.reference}" 
-        + " <(zcat {input.R1}) <(zcat {input.R2}) |"
+        + " <(zcat -f {input.R1}) <(zcat -f {input.R2}) |"
         + " samtools view -@ {threads} -bS - |"
         + " samtools sort -m 4G -@ {threads} > {output}"
         + " ) > {log} 2>&1"
