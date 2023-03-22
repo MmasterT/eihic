@@ -126,13 +126,14 @@ class HI_CCONFIGURE:
             sample_name = os.path.basename(os.path.abspath(data["long_reads"][sample]))
             sample_path = Path(read_dir).joinpath(sample_name)
             
-        Path(sample_path).symlink_to(os.path.abspath(data["long_reads"][sample]))
 
-        if self.args.force_reconfiguration:
+            if self.args.force_reconfiguration:
                 if Path(sample_path).is_symlink():
                     print(f"Unlinking '{sample_path}' with --force")
                     sample_path.unlink()
 
+            Path(sample_path).symlink_to(os.path.abspath(data["long_reads"][sample]))
+        
         self.run_config["input_samples"] = data
 
         #Create reference dir
