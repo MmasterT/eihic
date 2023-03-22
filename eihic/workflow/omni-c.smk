@@ -212,11 +212,11 @@ rule unique_unique:
 
 rule mapping_to_reference:
     input:
-        R1=f"{OUTPUT}/reads/{R1}",
-        R2=f"{OUTPUT}/reads/{R2}",
+        R1 = expand(f"{OUTPUT}/reads/{r1}", r1=R1),
+        R2 = expand(f"{OUTPUT}/reads/{r2}", r2=R2),
         bwa_inx = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.amb",
-        reference= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
-        index= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"
+        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
+        index = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"
     output: 
         f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam"
     params: 

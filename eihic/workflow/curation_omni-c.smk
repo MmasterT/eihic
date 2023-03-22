@@ -115,6 +115,8 @@ rule index_bam:
         f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam.bai"
     params:
         source = config["source"]["omni-c"]
+    log:
+        os.path.join(logs, "index_bam.log")
     threads:
         int(HPC_CONFIG.get_cores("index_bam"))
     resources:
@@ -380,8 +382,9 @@ rule unique_unique:
         align = f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
         reference = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output: 
-        unique = temp(f"{OUTPUT}/workflow/pairtools/unique.pairs.gz"),
-        sort = f"{OUTPUT}/workflow/pairtools/unique.sort.pairs.gz"
+        unique = temp(f"{OUTPUT}/workflow/pairtools/unique.pairs"),
+        sort = temp(f"{OUTPUT}/workflow/pairtools/unique.sort.pairs"),
+        compress = f"{OUTPUT}/workflow/pairtools/unique.sort.pairs.gz",
         stats = f"{OUTPUT}/workflow/pairtools/unique.pairs.stats"
     threads:
         HPC_CONFIG.get_cores("unique_unique")
@@ -393,15 +396,16 @@ rule unique_unique:
         source = config["source"]["omni-c"],
         source2 = config["source"]["cooler"]
     shell:
-        "(set +u" 
+        "(set +u"
+        + f" && mkdir -p {OUTPUT}/workflow/pairtools/" 
         + " && source {params.source}" 
-        + " && source {params.source2}"
         + " &&  pairtools parse --min-mapq 40 --walks-policy 5unique" 
         + " --max-inter-align-gap 30 -o {output.unique}"
         + " --output-stats {output.stats}"
         + " --nproc-in {threads} --chroms-path {input.reference} {input.align}"
-        + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp {{input}} "
-        + " > {output.sort}"
+        + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp "
+        + f" {OUTPUT}/workflow/pairtools/unique.pairs > {{output.sort}}"
+        + f" && bgzip {OUTPUT}/workflow/pairtools/unique.sort.pairs"
         + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/unique.sort.pairs.gz" 
         + " ) > {log} 2>&1"
 
@@ -412,8 +416,8 @@ rule multimapping_pairtools:
         align = f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
         reference = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output: 
-        unique = temp(f"{OUTPUT}/workflow/pairtools/all.pairs.gz"),
-        sort = f"{OUTPUT}/workflow/pairtools/all.sort.pairs.gz"
+        unique = temp(f"{OUTPUT}/workflow/pairtools/all.pairs"),
+        sort = f"{OUTPUT}/workflow/pairtools/all.sort.pairs",
         stats = f"{OUTPUT}/workflow/pairtools/all.pairs.stats"
     threads:
         HPC_CONFIG.get_cores("multimapping_pairtools")
@@ -425,15 +429,16 @@ rule multimapping_pairtools:
         source = config["source"]["omni-c"],
         source2 = config["source"]["cooler"]
     shell:
-        "(set +u" 
+        "(set +u"
+        + f" && mkdir -p {OUTPUT}/workflow/pairtools/" 
         + " && source {params.source}" 
-        + " && source {params.source2}"
         + " &&  pairtools parse --min-mapq 0 --walks-policy all" 
         + " --max-inter-align-gap 30 -o {output.unique}"
         + " --output-stats {output.stats}"
         + " --nproc-in {threads} --chroms-path {input.reference} {input.align}"
-        + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp {{input}} "
-        + " > {output.sort}"
+        + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp"
+        + f" {OUTPUT}/workflow/pairtools/all.pairs > {{output.sort}}"
+        + f" && bgzip {OUTPUT}/workflow/pairtools/all.sort.pairs"
         + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/all.sort.pairs.gz"
         + " ) > {log} 2>&1"
 
@@ -462,8 +467,8 @@ rule multimapping_pretext:
 
 rule mapping_to_reference:
     input:
-        R1=f"{OUTPUT}/reads/{R1}",
-        R2=f"{OUTPUT}/reads/{R2}",
+        R1 = expand(f"{OUTPUT}/reads/{r1}", r1=R1),
+        R2 = expand(f"{OUTPUT}/reads/{r2}", r2=R2),
         bwa_inx = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.amb",
         reference= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
         index= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"
@@ -505,10 +510,10 @@ rule build_index:
     shell:
         "(set +u" 
         + " && source {params.source}" 
-        + " && {params.bwa} index {params.threading} \ "
+        + " && {params.bwa} index {params.threading}"
         + " {input.reference} || true ) > {log} 2>&1"
 
-rule build_genome:
+rule build_genome:  
     input: 
         f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"
     output: 
