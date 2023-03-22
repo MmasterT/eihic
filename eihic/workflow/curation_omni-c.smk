@@ -48,12 +48,13 @@ OUTPUT = config["output"]
 LONG_READS = list_basenames(config["input_samples"]["long_reads"])
 logs = config["logs"]
 
+threading = ''
 if config['bwa-mem2'] == 'True':
     bwa = 'bwa-mem2'
     threading = "-p {threads}"
 elif config['bwa-mem2'] == 'False':
-    bwa = 'bwa',
-    threading = ''
+    bwa = 'bwa'
+    
 else:
     sys.exit("There is an error related to the config file.\n"
         + "Check your configuration file is not corrupted.\n"
@@ -331,6 +332,7 @@ rule pairtools_sort:
 rule cooler_unique:
     input:
         pairs = f"{OUTPUT}/workflow/pairtools/unique.sort.pairs.gz",
+        index = f"{OUTPUT}/workflow/pairtools/unique.sort.pairs.gz.px2",
         genome = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output:
         cool = temp(f"{OUTPUT}/workflow/cooler/unique_1kb.cool"),
@@ -355,7 +357,8 @@ rule cooler_unique:
 rule cooler_all:
     input:
         pairs = f"{OUTPUT}/workflow/pairtools/all.sort.pairs.gz",
-        genome = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
+        genome = f"{OUTPUT}/reference/genome/{ORGANISM}.genome",
+        index = f"{OUTPUT}/workflow/pairtools/all.sort.pairs.gz.px2",
     output:
         cool = temp(f"{OUTPUT}/workflow/cooler/all_1kb.cool"),
         mcool = f"{OUTPUT}/workflow/cooler/all_1kb.mcool"
@@ -383,9 +386,9 @@ rule unique_unique:
         reference = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output: 
         unique = temp(f"{OUTPUT}/workflow/pairtools/unique.pairs"),
-        sort = temp(f"{OUTPUT}/workflow/pairtools/unique.sort.pairs"),
         compress = f"{OUTPUT}/workflow/pairtools/unique.sort.pairs.gz",
-        stats = f"{OUTPUT}/workflow/pairtools/unique.pairs.stats"
+        stats = f"{OUTPUT}/workflow/pairtools/unique.pairs.stats",
+        index = f"{OUTPUT}/workflow/pairtools/unique.sort.pairs.gz.px2"
     threads:
         HPC_CONFIG.get_cores("unique_unique")
     log:
@@ -404,9 +407,11 @@ rule unique_unique:
         + " --output-stats {output.stats}"
         + " --nproc-in {threads} --chroms-path {input.reference} {input.align}"
         + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp "
-        + f" {OUTPUT}/workflow/pairtools/unique.pairs > {{output.sort}}"
+        + f" {OUTPUT}/workflow/pairtools/unique.pairs > {OUTPUT}/workflow/pairtools/unique.sort.pairs"
+        + " && source {params.source2}"
         + f" && bgzip {OUTPUT}/workflow/pairtools/unique.sort.pairs"
-        + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/unique.sort.pairs.gz" 
+        + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/unique.sort.pairs.gz"
+        + " || true"
         + " ) > {log} 2>&1"
 
 
@@ -417,8 +422,9 @@ rule multimapping_pairtools:
         reference = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output: 
         unique = temp(f"{OUTPUT}/workflow/pairtools/all.pairs"),
-        sort = f"{OUTPUT}/workflow/pairtools/all.sort.pairs",
-        stats = f"{OUTPUT}/workflow/pairtools/all.pairs.stats"
+        compress = f"{OUTPUT}/workflow/pairtools/all.sort.pairs.gz",
+        stats = f"{OUTPUT}/workflow/pairtools/all.pairs.stats",
+        index = f"{OUTPUT}/workflow/pairtools/all.sort.pairs.gz.px2"
     threads:
         HPC_CONFIG.get_cores("multimapping_pairtools")
     log:
@@ -437,9 +443,11 @@ rule multimapping_pairtools:
         + " --output-stats {output.stats}"
         + " --nproc-in {threads} --chroms-path {input.reference} {input.align}"
         + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp"
-        + f" {OUTPUT}/workflow/pairtools/all.pairs > {{output.sort}}"
+        + f" {OUTPUT}/workflow/pairtools/all.pairs > {OUTPUT}/workflow/pairtools/all.sort.pairs"
+        + " && source {params.source2
         + f" && bgzip {OUTPUT}/workflow/pairtools/all.sort.pairs"
         + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/all.sort.pairs.gz"
+        + " || true "
         + " ) > {log} 2>&1"
 
 
