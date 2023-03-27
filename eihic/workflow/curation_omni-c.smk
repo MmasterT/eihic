@@ -74,7 +74,7 @@ else:
 shell.prefix("set -eo pipefail; ")
 
 rule all:
-    input: 
+    input:
         f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam",
         f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
         f"{OUTPUT}/workflow/pretext/{ORGANISM}_unique_mapping.pretext",
@@ -88,7 +88,8 @@ rule all:
 
 rule mosdepth_coverage:
     input:
-        f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
+        bam = f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam",
+        index = f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam.bai"
     output:
         f"{OUTPUT}/workflow/tracks/{ORGANISM}.mosdepth.summary.txt",
         bedgz = temp(f"{OUTPUT}/workflow/tracks/{ORGANISM}.per-base.bed.gz"),
@@ -105,9 +106,10 @@ rule mosdepth_coverage:
         "(set + u"
         + " && source {params.source}"
         + f" && cd {OUTPUT}/workflow/tracks"
-        + f" && mosdepth -t {{threads}} -b 10000 -x  -m {ORGANISM} {{input}}"
+        + f" && mosdepth -t {{threads}} -b 10000 -x  -m {ORGANISM} {{input.bam}}"
         + " && zcat {output.bedgz} > {output.bedgraph}"
         + " ) > {log} 2>&1"
+
 
 rule index_bam:
     input:
@@ -116,24 +118,24 @@ rule index_bam:
         f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam.bai"
     params:
         source = config["source"]["omni-c"]
-    log:
-        os.path.join(logs, "index_bam.log")
     threads:
         int(HPC_CONFIG.get_cores("index_bam"))
+    log:
+        os.path.join(logs, "index_bam.log")
     resources:
         mem_mb = HPC_CONFIG.get_memory("index_bam")
     shell:
-        "(set +u" 
+        "(set +u"
         + " && source {params.source}"
         + " && samtools index -@ {threads} {input}"
         + " ) > {log} 2>&1"
+
 
 rule merge_bam:
     input:
         expand(f"{OUTPUT}/workflow/samtools/{{long_reads}}.sort.bam", long_reads = LONG_READS)
     output:
         bam = f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam",
-        index = f"{OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
     log:
         os.path.join(logs, "merge_bam.log")
     params:
@@ -143,11 +145,11 @@ rule merge_bam:
     resources:
         mem_mb = HPC_CONFIG.get_memory("merge_bam")
     shell:
-        "(set +u" 
+        "(set +u"
         + " && source {params.source}"
         + " && samtools merge -@ {threads} {output.bam} {input}"
-        + f" && samtools index -@ {{threads}} {OUTPUT}/workflow/samtools/{ORGANISM}_long_reads.sort.bam"
         + " ) > {log} 2>&1"
+
 
 rule minimap2:
     input:
@@ -173,6 +175,7 @@ rule minimap2:
         + " {output}"
         + " ) > {log} 2>&1"
 
+
 rule telomeres_reformatting:
     input:
         f"{OUTPUT}/workflow/telomeres/{ORGANISM}_telomeric_repeat_windows.tsv"
@@ -195,11 +198,11 @@ rule telomeres:
         #sequence = config["input_samples"]["telomeres"],
         dir = f"{OUTPUT}/workflow/telomeres"
     shell:
-        "(set +u" 
+        "(set +u"
         + " && source {params.source}"
         + " && tidk search --extension tsv -s TTAGGG -o {params.prefix} "
         + " --dir {params.dir}  {input.fasta}"
-        + " && sed  -i 1d {output} " 
+        + " && sed  -i 1d {output} "
         + " ) > {log} 2>&1"
 
 
@@ -212,6 +215,7 @@ rule gaps_reformatting:
         awk ' $4=$3-$2 {{ print $0}}' {input} > {output} 
         """
 
+
 rule gaps:
     input:
         fasta = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
@@ -222,7 +226,7 @@ rule gaps:
     params:
         source = config["source"]["seqtk"]
     shell:
-        "(set +u" 
+        "(set +u"
         + " && source {params.source}"
         + f" && mkdir -p {OUTPUT}/workflow/tracks"
         + " && seqtk cutN -g -n 10 {input.fasta} > {output} "
@@ -232,9 +236,9 @@ rule gaps:
 rule uniquemapping_pretext:
     input:
         f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam"
-    output: 
+    output:
         f"{OUTPUT}/workflow/pretext/{ORGANISM}_unique_mapping.pretext"
-    params: 
+    params:
         source = config["source"]["omni-c"],
         source_2 = config["source"]["pretext"]
     threads:
@@ -244,16 +248,17 @@ rule uniquemapping_pretext:
     resources:
         mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
     shell:
-        "(set +u" 
-        + " && source {params.source}" 
+        "(set +u"
+        + " && source {params.source}"
         + " && source {params.source_2}"
         + " && samtools view -h {input} | PretextMap --mapq 0 -o {output}"
         + " ) > {log} 2>&1"
 
+
 rule sort_bam:
     input: f"{OUTPUT}/workflow/pairtools/{ORGANISM}.bam"
-    output: 
-        sort = f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam", 
+    output:
+        sort = f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam",
         index = f"{OUTPUT}/workflow/samtools/{ORGANISM}.sorted.bam.bai"
     log:
         os.path.join(logs, "sort_bam.log")
@@ -271,10 +276,11 @@ rule sort_bam:
         + " && samtools index {output.sort}"
         + " ) > {log} 2>&1"
 
+
 rule unsorted_bam:
     input: f"{OUTPUT}/workflow/pairtools/dedup.pairbam"
-    output: 
-        maps = f"{OUTPUT}/workflow/pairtools/mapped.pairs", 
+    output:
+        maps = f"{OUTPUT}/workflow/pairtools/mapped.pairs",
         bam = temp(f"{OUTPUT}/workflow/pairtools/{ORGANISM}.bam")
     log:
         os.path.join(logs, "unsorted_bam.log")
@@ -286,13 +292,14 @@ rule unsorted_bam:
         mem_mb = HPC_CONFIG.get_memory("unsorted_bam")
     shell:
         "(set +u"
-        + " && source {params.source}" 
+        + " && source {params.source}"
         + " && pairtools split --nproc-in {threads} --nproc-out {threads}"
         + " --output-pairs {output.maps} --output-sam {output.bam} {input}"
         + " ) >  {log} 2>&1"
 
+
 rule pairtools_dedup:
-    input: f"{OUTPUT}/workflow/pairtools/sorted.pairbam"
+    input: f"{OUTPUT}/workflow/pairtools/unique.sort.pairs.gz"
     output: 
         out = temp(f"{OUTPUT}/workflow/pairtools/dedup.pairbam"), 
         stats =  f"{OUTPUT}/workflow/pairtools/stats.txt"
@@ -310,25 +317,6 @@ rule pairtools_dedup:
         + " ) > {log} 2>&1"
     
 
-rule pairtools_sort:
-    input:
-        f"{OUTPUT}/workflow/pairtools/unique.pairs.gz"
-    output:
-        f"{OUTPUT}/workflow/pairtools/sorted.pairbam"
-    params:
-        source = config["source"]["omni-c"]
-    threads:
-        int(HPC_CONFIG.get_cores("pairtools_sort"))
-    log:
-        os.path.join(logs, "pairtools_sort.log")
-    resources:
-        mem_mb = HPC_CONFIG.get_memory("mapping_to_reference")
-    shell:
-        "(set +u" 
-        + " && source {params.source}" 
-        + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp {{input}} > {{output}}"
-        + " ) > {log} 2>&1"
-    
 rule cooler_unique:
     input:
         pairs = f"{OUTPUT}/workflow/pairtools/unique.sort.pairs.gz",
@@ -357,8 +345,8 @@ rule cooler_unique:
 rule cooler_all:
     input:
         pairs = f"{OUTPUT}/workflow/pairtools/all.sort.pairs.gz",
-        genome = f"{OUTPUT}/reference/genome/{ORGANISM}.genome",
         index = f"{OUTPUT}/workflow/pairtools/all.sort.pairs.gz.px2",
+        genome = f"{OUTPUT}/reference/genome/{ORGANISM}.genome"
     output:
         cool = temp(f"{OUTPUT}/workflow/cooler/all_1kb.cool"),
         mcool = f"{OUTPUT}/workflow/cooler/all_1kb.mcool"
@@ -379,7 +367,6 @@ rule cooler_all:
         + " ) > {log} 2>&1"
         
 
-
 rule unique_unique:
     input: 
         align = f"{OUTPUT}/workflow/bwa/{ORGANISM}_mapped_reads.sort.bam",
@@ -399,21 +386,20 @@ rule unique_unique:
         source = config["source"]["omni-c"],
         source2 = config["source"]["cooler"]
     shell:
-        "(set +u"
-        + f" && mkdir -p {OUTPUT}/workflow/pairtools/" 
+        "(set +u" 
         + " && source {params.source}" 
-        + " &&  pairtools parse --min-mapq 40 --walks-policy 5unique" 
+        + f" && mkdir -p {OUTPUT}/workflow/pairtools/"
+        + " &&  pairtools parse --min-mapq 0 --walks-policy all" 
         + " --max-inter-align-gap 30 -o {output.unique}"
         + " --output-stats {output.stats}"
         + " --nproc-in {threads} --chroms-path {input.reference} {input.align}"
-        + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp "
+        + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp"
         + f" {OUTPUT}/workflow/pairtools/unique.pairs > {OUTPUT}/workflow/pairtools/unique.sort.pairs"
         + " && source {params.source2}"
         + f" && bgzip {OUTPUT}/workflow/pairtools/unique.sort.pairs"
         + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/unique.sort.pairs.gz"
         + " || true"
         + " ) > {log} 2>&1"
-
 
 
 rule multimapping_pairtools:
@@ -435,19 +421,19 @@ rule multimapping_pairtools:
         source = config["source"]["omni-c"],
         source2 = config["source"]["cooler"]
     shell:
-        "(set +u"
-        + f" && mkdir -p {OUTPUT}/workflow/pairtools/" 
+        "(set +u" 
+        + f" && mkdir -p {OUTPUT}/workflow/pairtools/"
         + " && source {params.source}" 
         + " &&  pairtools parse --min-mapq 0 --walks-policy all" 
         + " --max-inter-align-gap 30 -o {output.unique}"
         + " --output-stats {output.stats}"
         + " --nproc-in {threads} --chroms-path {input.reference} {input.align}"
         + f" &&  pairtools sort --nproc {{threads}} --tmpdir={OUTPUT}/tmp"
-        + f" {OUTPUT}/workflow/pairtools/all.pairs > {OUTPUT}/workflow/pairtools/all.sort.pairs"
-        + " && source {params.source2
+        + f" {OUTPUT}/workflow/pairtools/all.pairs > {OUTPUT}/workflow/pairtools/all.sort.pairs"       
+        + " && source {params.source2}"
         + f" && bgzip {OUTPUT}/workflow/pairtools/all.sort.pairs"
         + f" && pairix -p pairs -f {OUTPUT}/workflow/pairtools/all.sort.pairs.gz"
-        + " || true "
+        + " || true"
         + " ) > {log} 2>&1"
 
 
@@ -475,8 +461,8 @@ rule multimapping_pretext:
 
 rule mapping_to_reference:
     input:
-        R1 = expand(f"{OUTPUT}/reads/{r1}", r1=R1),
-        R2 = expand(f"{OUTPUT}/reads/{r2}", r2=R2),
+        R1=f"{OUTPUT}/reads/{R1}",
+        R2=f"{OUTPUT}/reads/{R2}",
         bwa_inx = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.amb",
         reference= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
         index= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"
@@ -496,8 +482,7 @@ rule mapping_to_reference:
         + " && source {params.source}" 
         + " && {params.bwa} mem -5SP -T0 -t {threads} {input.reference}" 
         + " <(zcat -f {input.R1}) <(zcat -f {input.R2}) |"
-        + " samtools view -@ {threads} -bS - |"
-        + " samtools sort -m 4G -@ {threads} > {output}"
+        + " samtools view -@ {threads} -bS - > {output}"
         + " ) > {log} 2>&1"
 
 rule build_index:
@@ -521,7 +506,7 @@ rule build_index:
         + " && {params.bwa} index {params.threading}"
         + " {input.reference} || true ) > {log} 2>&1"
 
-rule build_genome:  
+rule build_genome:
     input: 
         f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"
     output: 
@@ -552,6 +537,5 @@ rule index_reference:
     shell:
         "(set +u"
         + " && source {params.source}" 
-        + " && samtools faidx {input} "
-        + ") > {log} 2>&1"
-
+        + " && samtools faidx {input}"
+        + " ) > {log} 2>&1"
