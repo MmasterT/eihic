@@ -145,7 +145,7 @@ class HI_CCONFIGURE:
         if self.args.force_reconfiguration:
             if reference_path.is_symlink():
                 print(f"Unlinking '{reference_path}' with --force")
-                sample_path.unlink()
+                reference_path.unlink()
         Path(reference_dir).joinpath(data["organism"] + ".fasta").symlink_to(os.path.abspath(data["reference"]))
 
         #Creates workflow and tmp directories
