@@ -28,7 +28,8 @@ setup(
     scripts=[script for script in glob.glob("eihic/scripts/*")],
     package_data={
         "eihic.workflow": ["omni-c.smk",
-            "arima.smk"],
+            "arima.smk",
+            "curation_omni-c.smk"],
         "eihic.etc": ["hpc_config.json", 
             "run_config.yaml", 
             "samples.csv"],

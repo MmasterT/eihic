@@ -102,8 +102,8 @@ class HI_C:
         self.config = yaml.load(open(DEFAULT_CONFIG_FILE), Loader=yaml.SafeLoader)
 
         # Gets JIRA ticket from server (or makes one from args provided if args are set appropriately)
-        if self.jira_id:
-            JiraInfo(self.jira_id).initialise(config=self.config)
+        #if self.jira_id:
+        #   JiraInfo(self.jira_id).initialise(config=self.config)
 
     def run(self):
         print("Running the pipeline..")
