@@ -11,7 +11,11 @@ This tool is an in-house snakemake pipeline from the EI Core-Bioinformatics grou
 conda create snakemake python=3.8 snakemake=7.12.1
 conda activate snakemake #If it is your first time go to the conda documentation at the end of the repository. 
 
-git clone https://github.com/EI-CoreBioinformatics/eihic.git
+git clone https://${PERSONAL_TOKEN}@github.com/EI-CoreBioinformatics/eihic.git
+
+input USERNAME
+input PERSONAL_TOKEN
+
 cd eihic
 
 #For ease of installation follow these steps
@@ -30,7 +34,15 @@ PATH="${PYTHONUSERBASE}"/bin:"${PATH}"
 
 ## Quick start
 
-Let's check the wrapper of the two main companents of EIHiC:
+First source the current version of the tool:
+
+`source eihic-0.2.0`
+
+If you don't have it add /ei/software/cb/bin to your PATH variable:
+
+`export PATH=${PATH}:/ei/software/cb/bin`
+
+Then check the wrapper of the two main companents of eihic:
 
 ```bash
 Usage:
@@ -51,62 +63,106 @@ optional arguments:
   -v, --version    show program's version number and exit
 ```
 
-The first step of the pipeline is to create a config file to be used by snakemake in the HPC. All the arguments are described as optional but --sample_csv must be have an asociated Path ro a sample file as showed in the reference path in the eihic configure --help command.
+The first step of the pipeline is to create a config file to be used by snakemake in the HPC. All the arguments are described as optional but --sample_csv -s  must be have an asociated Path a sample file as showed in the reference path in the eihic configure --help command.
 
 ```bash
-[~]--% eihic configure --help
-usage: EI HI-C configure [-h] [--samples_csv SAMPLES_CSV] [--jira JIRA] [-o OUTPUT] [-f] [-bm2]
+--% eihic configure --help
+usage: EI HI-C configure [-h] [-s SAMPLES_CSV] [-c] [--jira JIRA] [-o OUTPUT] [-f] [-bm2]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --samples_csv SAMPLES_CSV
-                        Provide sample information in tab-separated format. Please refer to the sample file:
-                        /ei/software/cb/eihic/0.1.0/x86_64/lib/python3.9/site-packages/eihic/etc/run_config.yaml, for more information above the csv format. A template is provided here
-                        /ei/software/cb/eihic/0.1.0/x86_64/lib/python3.9/site-packages/eihic/etc/samples.csv.
-                        (default: None)
+  -s SAMPLES_CSV, --samples_csv SAMPLES_CSV
+                        Provide sample information in tab-separated format. Please refer to the sample
+                        file: /ei/software/cb/eihic/0.2.0/x86_64/lib/python3.9/site-
+                        packages/eihic/etc/run_config.yaml for more information above the csv format. A
+                        template is provided here
+                        /ei/software/cb/eihic/0.2.0/x86_64/lib/python3.9/site-
+                        packages/eihic/etc/samples.csv. (default: None)
+  -c, --curation        Use this flag if you have your final scaffold and want to run the curation
+                        pipeline. Bare in mind that the sample_csv file requires an extra field with
+                        the long reads file paths as a fifth line. (default: False)
   --jira JIRA           Provide JIRA id for posting job summary. E.g., PPBFX-611 (default: None)
   -o OUTPUT, --output OUTPUT
-                        Provide output directory (default: /hpc-home/olivera/output)
+                        Provide output directory (default: /ei/.project-
+                        scratch/3/35652c26-5607-45bf-a6ec-2fd255ce2730/CB-
+                        GENANNO-532_ERGA_Salvelinus_alpinus/output)
   -f, --force-reconfiguration
                         Force reconfiguration (default: False)
-  -bm2, --bwa_mem2      Use bwa-mem2 insted of bwa mem. This option use a lot more RAM, use with precaution.
-                        (default: False)
+  -bm2, --bwa_mem2      Use bwa-mem2 insted of bwa mem. This option use a lot more RAM, use with
+                        precaution. (default: False
 ```
 
-Once you got the run_config.yaml file from the EIHiC wrapper you need to specify the run command. This tool supports omni-c and arima two-enzymes library prep protocols fot Hi-C, you must choose one of them (default is omni-c).
+Once you created the output_dir/run_config.yaml file from the eihic wrapper you need to run the eihic run subcommand. This tool supports omni-c and arima two-enzymes library prep protocols fot Hi-C, you must choose one of them (default is omni-c).
 
 ```bash
-[~]--% eihic run --help
-usage: EI HI-C run [-h] [--library LIBRARY] [--hpc_config HPC_CONFIG] [--jobs JOBS] [--latency_wait LATENCY_WAIT]
-                   [--no_posting] [-v] [-np]
+--% eihic run --help
+usage: EI HI-C run [-h] [--library LIBRARY] [-c] [--hpc_config HPC_CONFIG] [--jobs JOBS]
+                   [--latency_wait LATENCY_WAIT] [--no_posting_off] [-v] [-np]
                    run_config
 
 positional arguments:
-  run_config            Provide run configuration YAML. Run 'eihic configure -h' to generate the run configuration
-                        YAML file. (Description template file is here:
-                        /ei/software/cb/eihic/0.1.0/x86_64/lib/python3.9/site-packages/eihic/etc/run_config.yaml)
+  run_config            Provide run configuration YAML. Run 'eihic configure -h' to generate the run
+                        configuration YAML file. (Description template file is here:
+                        /ei/software/cb/eihic/0.2.0/x86_64/lib/python3.9/site-
+                        packages/eihic/etc/run_config.yaml)
 
 optional arguments:
   -h, --help            show this help message and exit
-  --library LIBRARY     This pipeline supports the following library protocols for hi-c data: arima (2 enzymes
-                        protocol), and omni-c. Provide the name (arima or omni-c) as the second positional argument
-                        after the sample file (default: omni-c).
+  --library LIBRARY     This pipeline supports the following library protocols for hi-c data: arima (2
+                        enzymes protocol), and omni-c. Provide the name (arima or omni-c) as the second
+                        positional argument after the sample file (default: omni-c)
+  -c, --curation        This flag run the steps generate all the required Hi-C contact matrices and
+                        tracks for its manual curation step. (default: False)
   --hpc_config HPC_CONFIG
                         Provide HPC configuration YAML (default:
-                        /ei/software/cb/eihic/0.1.0/x86_64/lib/python3.9/site-packages/eihic/etc/hpc_config.json)
+                        /ei/software/cb/eihic/0.2.0/x86_64/lib/python3.9/site-
+                        packages/eihic/etc/hpc_config.json)
   --jobs JOBS, -j JOBS  Use at most N CPU cluster/cloud jobs in parallel (default: 100)
   --latency_wait LATENCY_WAIT
-                        Wait given seconds if an output file of a job is not present after the job finished
-                        (default: 120)
-  --no_posting_off          Use this flag if you are testing and do not want to post comments to JIRA tickets (default:
-                        True)
+                        Wait given seconds if an output file of a job is not present after the job
+                        finished (default: 120)
+  --no_posting_off      Use this flag if you want to post comments to JIRA tickets (default: True)
   -v, --verbose         Verbose mode for debugging (default: False)
-  -np, --dry_run        Dry run (default: False)
+  -np, --dry_run        Dry run (default: False
 ```
+
+## Relevant outputs of each pipeline:
+
+
+
+arima two enzymes library:
+
+- READ_NAME.hicup.sam.HiCUP_summary_report_UUID_TIMESTAMP.html
+
+
+omni-c library:
+
+- OUTPUT_dir/results/ORGANISM_NAME_hi-c_library_complexity.txt",
+
+- OUTPUT_dir/results/ORGANISM_NAME_stats_library.txt",
+
+- OUTPUT_dir/workflow/samtools/ORGANISM_NAME.sorted.bam
+
+- OUTPUT_dir/bwa/samtools/ORGANISM_NAME.sorted.bam
+
+
+omni-c library curation mode:
+
+- OUTPUT_dir/workflow/samtools/ORGANISM_NAME.sorted.bam
+- OUTPUT_dir/workflow/bwa/ORGANISM_NAME_mapped_reads.sort.bam
+- OUTPUT_dir/workflow/pretext/ORGANISM_NAME_unique_mapping.pretext
+- OUTPUT_dir/workflow/pretext/ORGANISM_NAME_multi_mapping.pretext
+- OUTPUT_dir/workflow/cooler/unique_1kb.mcool
+- OUTPUT_dir/workflow/cooler/all_1kb.mcool
+- OUTPUT_dir/workflow/tracks/gaps_ORGANISM_NAME.bedgraph
+- OUTPUT_dir/workflow/tracks/telomeres_ORGANISM_NAME.bedgraph
+- OUTPUT_dir/workflow/tracks/coverage_ORGANISM_NAME.bedgraph
 
 ## Documentation
 
 ### Sample_csv format
+
+
 
 This file is composed of four lines:
 
@@ -114,7 +170,9 @@ This file is composed of four lines:
 2. all R2 reads
 3. Path to the reference assembly.
 4. organism name (will be used for file naming)
-5. (if running curation mode) list of hifi_reads in fasta/fasta.gz
+5. (if running curation mode -c / --curation) list of hifi_reads in fasta/fasta.gz
+
+
 
 Example:
 
@@ -126,11 +184,21 @@ reference/genome/you_reference_genome.fasta #path to reference
 
 name_of_organism (internal naming usage)
 
-hifi_1.fasta,hifi_2.fasta,(...),hifi_n.fasta
+hifi_1.fasta,hifi_2.fasta,(...),hifi_n.fasta (optional)
 
 ### Conda
 
 https://docs.conda.io/projects/conda/en/stable/
+
+Package managment and environment mangament for python code.
+
+### SNAKEMAKE
+
+Workflow managment tool based in Python.
+
+https://snakemake.readthedocs.io/en/v7.12.0/
+
+https://github.com/snakemake/snakemake
 
 ### Omni-c
 
@@ -154,22 +222,50 @@ The installation of the Arima software is sourced from a fork of the original re
 
 https://github.com/MmasterT/CHiC
 
-### Pairbix
+### Pairix
+
+https://github.com/4dn-dcic/pairix
+
+Matrix indexing used to obtain .mcool contac maps to use in high-glass
 
 ### Cooler
 
+https://github.com/open2c/cooler
+
+https://cooler.readthedocs.io/en/latest/
+
+multiple resolution matrix used for the manual curation of genomes and TAD analysis.
+
 ### PretextMap
+
+https://github.com/wtsi-hpag/PretextMap
+
+Contact maps visualization tool for Hi-C. Used to move contigs/scaffolds to curate the genome.
 
 ### TIDK
 
+Telomere identification toolkit from DToL.
+
+https://github.com/tolkit/telomeric-identifier
+
+If you don't know or there is no information for your telomere sequence
+
 ### Mosdepth
 
-### YaHS
+https://github.com/brentp/mosdepth
+
+obtaining coverage data from the genome.
 
 ### Minimap2
 
+https://github.com/lh3/minimap2
+
+aligner of choice for the PacBio HiFi reads. The output is in sam/bam format and uses the the preset map-hifi
+
 ## To Do's
 
-- find how to delete the bug that does not let you use absoulth path for the files
 - use bwa-mem 2 to make analysis fastaer for small genomes (too resource demanding for big genomes)
 - add other relevant library preps for hi-c
+- add telomere to the config
+- add repeats trach from eirepeat pipeline
+-
