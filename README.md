@@ -268,4 +268,4 @@ aligner of choice for the PacBio HiFi reads. The output is in sam/bam format and
 - add other relevant library preps for hi-c
 - add telomere to the config
 - add repeats trach from eirepeat pipeline
--
+- add the fasta to TPF file formatting
