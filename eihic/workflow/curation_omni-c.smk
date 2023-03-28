@@ -153,15 +153,15 @@ rule merge_bam:
 
 rule minimap2:
     input:
-        reads = expand(f"{OUTPUT}/reads/{{long_reads}}", long_reads=LONG_READS),
-        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
+        reads = f"{OUTPUT}/reads/long_reads/{{long_reads}}"
     output:
-        expand(f"{OUTPUT}/workflow/samtools/{{long_reads}}.sort.bam", long_reads=LONG_READS),
+        bam = temp(f"{OUTPUT}/workflow/samtools/{{long_reads}}.sort.bam")
     log:
-        os.path.join(logs, "minimap2.log")
+        os.path.join(logs, "minimap2.{long_reads}.log")
     params:
         source = config["source"]["minimap2"],
         source_2 = config["source"]["omni-c"],
+        reference = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta"
     threads:
         int(HPC_CONFIG.get_cores("minimap2"))
     resources:
@@ -170,9 +170,9 @@ rule minimap2:
         "(set +u" 
         + " && source {params.source}"
         + " && source {params.source_2}"
-        + " && minimap2 -t {threads} -ax map-hifi {input.reference} {input.reads} " 
+        + " && minimap2 -t {threads} -ax map-hifi {params.reference} {input.reads} " 
         + " | samtools view -@ {threads} -bS - | samtools sort -@ {threads} -m 4G > "
-        + " {output}"
+        + " {output.bam}"
         + " ) > {log} 2>&1"
 
 
@@ -461,8 +461,8 @@ rule multimapping_pretext:
 
 rule mapping_to_reference:
     input:
-        R1=f"{OUTPUT}/reads/{R1}",
-        R2=f"{OUTPUT}/reads/{R2}",
+        R1=f"{OUTPUT}/reads/short_reads/{R1}",
+        R2=f"{OUTPUT}/reads/short_reads/{R2}",
         bwa_inx = f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.amb",
         reference= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta",
         index= f"{OUTPUT}/reference/genome/{ORGANISM}.fasta.fai"

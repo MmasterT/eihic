@@ -101,7 +101,7 @@ class HI_CCONFIGURE:
             )
 
         # link the reads
-        read_dir = Path(self.args.output).joinpath("reads")
+        read_dir = Path(self.args.output).joinpath("reads/short_reads")
         Path(read_dir).mkdir(parents=True, exist_ok=True)
 
         # r1_cmd = f"cd {read_dir} && ln -s {R1[sample]} x[SID].R1.{ext}"
@@ -122,6 +122,8 @@ class HI_CCONFIGURE:
             Path(r1_path).symlink_to(os.path.abspath(data["R1"][sample]))
             Path(r2_path).symlink_to(os.path.abspath(data["R2"][sample]))
         
+        read_dir = Path(self.args.output).joinpath("reads/long_reads")
+        Path(read_dir).mkdir(parents=True, exist_ok=True)
         for sample in range(len(data["long_reads"])):
             sample_name = os.path.basename(os.path.abspath(data["long_reads"][sample]))
             sample_path = Path(read_dir).joinpath(sample_name)
